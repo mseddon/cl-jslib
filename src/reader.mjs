@@ -43,10 +43,7 @@ export class MacroChar {
     };
 }
 
-//
-// This fruit be low.
-// Print is also pretty dumb.
-//
+// This totally doesn't work yet.
 export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null, object = eofValue) {
     let potentialNumber = true;
 
@@ -65,7 +62,6 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
         switch(res = syntaxType(x)) {
             case "invalid":
                 throw "Invalid character";
-                break outer;
             case "whitespace":
                 continue outer;
             case "single escape":

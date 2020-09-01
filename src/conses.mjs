@@ -1,3 +1,4 @@
+import * as sequences from "./sequences.mjs"
 import { EQUAL, eql, equal } from "./equal.mjs";
 
 export class Nil {
@@ -691,3 +692,20 @@ export function union(list1, list2) {
 // nunion
 
 // subsetp
+
+/** SEQUENCE IMPLEMENTATIONS */
+
+// copy-seq
+Cons.prototype[sequences.COPY_SEQ] = Nil.prototype[sequences.COPY_SEQ] = copyList;
+
+// elt
+Cons.prototype[sequences.ELT] = Nil.prototype[sequences.ELT] = nth;
+
+// length
+Cons.prototype[sequences.LENGTH] = Nil.prototype[sequences.LENGTH] = x => {
+    let res = listLength(x);
+    if(res === NIL)
+        throw "Cyclic list";
+}
+
+Nil.prototype[sequences.LENGTH] = x => 0;

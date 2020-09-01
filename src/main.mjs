@@ -5,11 +5,11 @@ import * as reader from "./reader.mjs";
 import * as equal from "./equal.mjs";
 import * as streams from "./streams.mjs";
 import * as characters from "./characters.mjs";
-//import "./sequence";
+import * as sequences from "./sequences.mjs";
 //import "./string";
 import * as symbols from "./symbols.mjs";
 
-let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols};
+let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols, ...sequences};
 
 
 let lst = conses.list(1, 2, 3, 4);

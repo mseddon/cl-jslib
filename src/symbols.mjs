@@ -17,14 +17,14 @@ export class Package {
         this.nicknames = nicknames;
         this.internalSymbols = {};
         this.externalSymbols = {};
+        this.packageUseList = [];
+        this.packageUsedByList = [];
     }
 }
 
 // This is dumb. Make this swappable later for multi environment.
 export const CL_PACKAGE = new Package("COMMON-LISP", ["CL"]);
 export const KEYWORD_PACKAGE = new Package("KEYWORD", []);
-
-export let CURRENT_PACKAGE = new Package("COMMON-LISP-USER", ["CL-USER"]);
 
 // export
 
@@ -88,14 +88,28 @@ export function packageNicknames(pckage) {
 }
 
 // package-shadowing-symbols
+
 // package-use-list
+export function packageUseList(pckage) {
+    if(!packagep(pckage))
+        throw "Type Error";
+    return list.apply(null, pckage.packageUseList);    
+}
+
 // package-used-by-list
+export function packageUsedByList(pckage) {
+    if(!packagep(pckage))
+        throw "Type Error";
+    return list.apply(null, pckage.packageUsedByList);
+}
 
 export function packagep(x) {
     return x instanceof Package;
 }
 
-// *package* (CURRENT_PACKAGE)
+// *package*
+export let CURRENT_PACKAGE = new Package("COMMON-LISP-USER", ["CL-USER"]);
+
 
 // package-error
 // package-error-package
@@ -145,6 +159,7 @@ export function gentemp(prefix = "T", pckage = CURRENT_PACKAGE) {
     return new pckage.intern(prefix+(gensymCounter++));
 }
 
+// symbol-function
 export function symbolFunction(x) {
     if(!symbolp(x))
         throw "Type Error";
