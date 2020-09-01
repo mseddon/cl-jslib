@@ -9,7 +9,7 @@
     "build": "npx rollup -c rollup.config.js"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "rollup": "^2.26.5",
     "rollup-plugin-terser": "^7.0.0"
