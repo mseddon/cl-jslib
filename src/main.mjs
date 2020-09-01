@@ -1,0 +1,22 @@
+//import "./hashtable";
+import * as conses from "./conses.mjs";
+//import "./arrays";
+import * as reader from "./reader.mjs";
+import * as equal from "./equal.mjs";
+import * as streams from "./streams.mjs";
+import * as characters from "./characters.mjs";
+//import "./sequence";
+//import "./string";
+import * as symbols from "./symbols.mjs";
+
+let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols};
+
+
+let lst = conses.list(1, 2, 3, 4);
+
+let s = new streams.StringInputStream("Hello\nWorld");
+
+console.log(env);
+
+console.log(streams.readLine(s, false));
+console.log(streams.readLine(s, false));

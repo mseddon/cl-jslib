@@ -1,0 +1,288 @@
+const chars = {};
+
+export class LispChar {
+    constructor(ch) {
+        if(chars[ch])
+            return chars[ch];
+        this.value = ch;
+        this.charCode = ch.charCodeAt(0);
+        chars[ch] = this;
+    }
+}
+
+// char=
+export function charEq(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value !== value)
+            return false;
+    }
+    return true;
+}
+
+// char/=
+export function charNe(...chars) {
+    if(chars.length === 0)
+        return false;
+    const seen = new Set();
+    for(let i=0; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(seen.has(chars[i].value))
+            return false;
+        seen.add(chars[i].value);
+    }
+    return true;
+}
+
+// char<
+export function charLt(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value >= value)
+            return false;
+        value = chars[i].value;
+    }
+    return true;
+}
+
+// char>
+export function charGt(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value <= value)
+            return false;
+        value = chars[i].value;
+    }
+    return true;
+}
+
+// char<=
+export function charLte(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value > value)
+            return false;
+        value = chars[i].value;
+    }
+    return true;
+}
+
+// char>=
+export function charGte(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value < value)
+            return false;
+        value = chars[i].value;
+    }
+    return true;
+}
+
+
+// char-equal
+export function charEqual(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value.toLowerCase();
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value.toLowerCase() !== value)
+            return false;
+    }
+    return true;
+}
+
+// char-not-equal
+export function charNotEqual(...chars) {
+    if(chars.length === 0)
+        return false;
+    const seen = new Set();
+    for(let i=0; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(seen.has(chars[i].value.toLowerCase()))
+            return false;
+        seen.add(chars[i].value.toLowerCase());
+    }
+    return true;
+}
+
+// char-lessp
+export function charLessP(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value.toLowerCase();
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        let v2 = chars[i].value.toLowerCase();
+        if(v2 >= value)
+            return false;
+        value = v2;
+    }
+    return true;
+}
+
+// char-greaterp
+export function charGreaterP(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value.toLowerCase();
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        let v2 = chars[i].value.toLowerCase();
+        if(v2 <= value)
+            return false;
+        value = v2;
+    }
+    return true;
+}
+
+// char-not-greaterp
+export function charNotGreaterP(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value.toLowerCase();
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value <= value)
+            return false;
+        value = chars[i].value.toLowerCase();
+    }
+    return true;
+}
+
+// char-not-lessp
+export function charNotLessP(...chars) {
+    if(chars.length === 0)
+        return false;
+    if(!characterp(chars[0]))
+        throw "Type error";
+    const value = chars[0].value;
+    for(let i=1; i<chars.length; i++) {
+        if(!characterp(chars[i]))
+            throw "Type error";
+        if(chars[i].value >= value)
+            return false;
+        value = chars[i].value;
+    }
+    return true;
+}
+
+// character
+
+// characterp
+export function characterp(x) {
+    return x instanceof LispChar;
+}
+
+// alpha-char-p
+export function alphaCharP(x) {
+    if(!characterp(x))
+        throw "Type Error"
+    if(x.value >= 'A' && x.value <= 'Z' || x.value >= 'a' && x.value <= 'z')
+        return true;
+    return false;
+}
+
+export function alphanumericp(ch) {
+    return boolify(alphaCharP(ch)) || boolify(digitCharP(ch)) ? true : false;
+}
+
+// digit-char
+
+// digit-char-p
+export function digitCharP(x, base = 10) { // TODO: Base
+    if(!characterp(x))
+        throw "Type Error"
+    if(x.value >= '0' && x.value <= '9')
+        return x.value.charCodeAt(0) - '0'.charCodeAt(0)
+    return false;
+}
+
+// graphic-char-p
+// standard-char-p
+
+// char-upcase
+export function charUpcase(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return new LispChar(ch.value.toUpperCase())
+}
+
+// char-downcase
+export function charDowncase(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return new LispChar(ch.value.toLowerCase())
+}
+
+// upper-case-p
+export function upperCaseP(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return ch.value.toUpperCase() == ch.value && ch.value.toLowerCase() !== ch.value;
+}
+
+// lower-case-p
+export function lowerCaseP(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return ch.value.toLowerCase() == ch.value && ch.value.toUpperCase() !== ch.value;
+}
+
+// both-case-p
+export function bothCaseP(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return ch.value.toLowerCase() == ch.value.toUpperCase();
+}
+
+// char-code
+// char-int
+// code-char
+// char-code-limit
+// char-name
+// name-char
