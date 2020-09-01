@@ -1,5 +1,5 @@
 import { NIL } from "./conses.mjs";
-import { LispChar, character } from "./characters.mjs";
+import { LispChar, characterp } from "./characters.mjs";
 
 export const INPUT_STREAM = Symbol("input-stream");
 export const OUTPUT_STREAM = Symbol("output-stream");
