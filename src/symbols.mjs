@@ -64,7 +64,7 @@ export function findPackage(name) {
 
 export function intern(str, pckage=CURRENT_PACKAGE) {
     if(typeof str == "string") {
-        let sym = findSymbol(str, pckage);
+        let sym = findSymbol(str, pckage);a
         if(!sym) {
             return pckage.internalSymbols[sym.name] = new Sym(str, pckage);
         }

@@ -709,3 +709,21 @@ Cons.prototype[sequences.LENGTH] = Nil.prototype[sequences.LENGTH] = x => {
 }
 
 Nil.prototype[sequences.LENGTH] = x => 0;
+
+
+Cons.prototype[sequences.REVERSE] = Nil.prototype[sequences.REVERSE] = x => {
+    if(nullp(x))
+        return x;
+    if(consp(x)) {
+        let head = cons(car(x), NIL);
+        x = cdr(x);
+        while(consp(x)) {
+            head = cons(car(x), head);
+            x = cdr(x);
+        }
+        if(x !== NIL)
+            throw "Not a proper list";
+        return head;
+    }
+    throw "Type error";
+}

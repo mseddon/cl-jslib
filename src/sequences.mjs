@@ -30,11 +30,18 @@ export function elt(sequence, index) {
 export const LENGTH = Symbol("length");
 export function length(x) {
     if(x && x[LENGTH])
-        return x[LENGTH]();
+        return x[LENGTH](x);
     throw "Type error"
 }
 
 // reverse
+export const REVERSE = Symbol("reverse");
+export function reverse(x) {
+    if(x && x[REVERSE])
+        return x[REVERSE](x);
+    throw "Type error"
+}
+
 // nreverse
 // sort
 // stable-sort
