@@ -11,7 +11,9 @@ import * as symbols from "./symbols.mjs";
 
 let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols, ...sequences};
 
-console.log(env); // just to ensure we don't treeshake everything.
+/** This line forces terser to keep all the library */
+if(global && global["T"])
+    console.log(env)
 
 let lst = conses.list(1, 2, 3, 4);
 
