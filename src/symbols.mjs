@@ -113,8 +113,6 @@ export function unintern(symbols, pckage = CURRENT_PACKAGE) {
     }
 }
 
-// in-package
-
 // unuse-package
 export function unusePackage(packagesToUnuse, pckage = CURRENT_PACKAGE) {
     if(!listp(packagesToUnuse))
