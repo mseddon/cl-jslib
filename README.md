@@ -22,4 +22,4 @@ Invoke `npm run build` to generate a minified / mangled bundle into `dist\bundle
 
 Currently no support for keyword arguments or multiple return values.  When these are included, these will not be fun to program in directly, but will allow idiomatic CL to be trivially compiled with decent performance.
 
-_This is not a compiler_. There are no implementations of macros, etc. The purpose is to leverage this library to implement macros via an external compiler, such as JACL, to ensure that compiled distributions are tiny.
+_This is not a compiler or interpreter_. There are no implementations of macros, etc here. The purpose of this library is to provide a small, fast, common lisp runtime for use with external compilers and interpreters.
