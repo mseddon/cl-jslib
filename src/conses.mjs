@@ -143,6 +143,7 @@ export const cddaar = x => cdr(cdr(car(car(x))));
 
 // cddadr
 export const cddadr = x => cdr(cdr(car(cdr(x))));
+
 // cdddar
 export const cdddar = x => cdr(cdr(cdr(car(x))));
 
