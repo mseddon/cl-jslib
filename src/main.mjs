@@ -11,7 +11,7 @@ import * as symbols from "./symbols.mjs";
 
 let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols, ...sequences};
 
-console.log(env); // just to ensure we don't treeshake everything.
+// console.log(env); // just to ensure we don't treeshake everything.
 
 let lst = conses.list(1, 2, 3, 4);
 
@@ -33,6 +33,7 @@ let foo = new symbols.Package("FOO");
 symbols.intern("HI", CL);
 symbols.usePackage(conses.list("CL"), foo);
 symbols.$export("HI", CL);
-console.log(symbols.findSymbol("HI", foo));
 
+symbols.unusePackage(conses.list("CL"), foo);
+console.log(symbols.findSymbol("HI", foo));
 

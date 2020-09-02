@@ -1,5 +1,4 @@
-import { consp, car, cdr, list, copyList} from "./conses.mjs";
-import { listp } from "./conses.mjs";
+import { consp, cons, car, cdr, list, listp, copyList, NIL} from "./conses.mjs";
 
 /** PACKAGES */
 const packageNames = new Map();
@@ -15,13 +14,17 @@ export class Package {
                 throw "Package name in use "+nicknames[i];
             packageNames.set(nicknames[i], this);
         }
-        
+
         this.nicknames = nicknames;
         this.internalSymbols = {};
         this.externalSymbols = {};
         this.useList = [];
         this.usedByList = [];
         this.shadowingSymbols = new Set();
+    }
+
+    toString() {
+        return "#<PACKAGE "+this.name+">";
     }
 }
 
@@ -69,6 +72,13 @@ export function findPackage(name) {
 // import
 
 // list-all-packages
+export function listAllPackages() {
+    let head = NIL;
+    for(let p of new Set(packageNames.values()))
+        head = cons(p, head);
+    return head;
+}
+
 // rename-package
 // shadowing-import
 // delete-package
@@ -116,8 +126,8 @@ export function unusePackage(packagesToUnuse, pckage = CURRENT_PACKAGE) {
             s = s.name;
         s = findPackage(s);
         if(s) {
-            s.pckage.useList.delete(s);
-            s.usedByList.delete(s.pckage);
+            pckage.useList.splice(pckage.useList.indexOf(s) >>> 0, 1);
+            s.usedByList.splice(s.usedByList.indexOf(s)  >>> 0, 1);
         }
     }
 }
