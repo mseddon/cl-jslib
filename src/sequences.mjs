@@ -2,7 +2,7 @@
 export const COPY_SEQ = Symbol("copy-seq");
 export function copySeq(sequence) {
     if(sequence && sequence[COPY_SEQ])
-        return sequence[COPY_SEQ]();
+        return sequence[COPY_SEQ](sequence);
     throw "Type error";
 }
 
@@ -10,7 +10,7 @@ export function copySeq(sequence) {
 export const ELT = Symbol("elt");
 export function elt(sequence, index) {
     if(sequence && sequence[ELT])
-        return sequence[ELT](index);
+        return sequence[ELT](sequence, index);
     throw "Type error";
 }
 
@@ -28,17 +28,17 @@ export function elt(sequence, index) {
 
 // length
 export const LENGTH = Symbol("length");
-export function length(x) {
-    if(x && x[LENGTH])
-        return x[LENGTH](x);
+export function length(sequence) {
+    if(sequence && sequence[LENGTH])
+        return sequence[LENGTH](sequence);
     throw "Type error"
 }
 
 // reverse
 export const REVERSE = Symbol("reverse");
-export function reverse(x) {
-    if(x && x[REVERSE])
-        return x[REVERSE](x);
+export function reverse(sequence) {
+    if(sequence && sequence[REVERSE])
+        return sequence[REVERSE](sequence);
     throw "Type error"
 }
 

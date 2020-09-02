@@ -19,6 +19,7 @@ export class Package {
         this.externalSymbols = {};
         this.packageUseList = [];
         this.packageUsedByList = [];
+        this.packageShadowingSymbols = new Set();
     }
 }
 
@@ -27,18 +28,38 @@ export const CL_PACKAGE = new Package("COMMON-LISP", ["CL"]);
 export const KEYWORD_PACKAGE = new Package("KEYWORD", []);
 
 // export
+export function $export(symbols, pckage = CURRENT_PACKAGE) {
+    if(symbolp(symbols))
+        symbols = list(symbols);
+    
+    for(let x = symbols; consp(x); x = cdr(x)) {
+        let s = findSymbol(car(x), pckage);
+        if(!s)
+            throw "Symbol "+car(x)+" Not accessible";
+        this.externalSymbols[s.name] = s;
+    }
+}
 
 // find-symbol
-export function findSymbol(string, pckage = CURRENT_PACKAGE) {
+export function findSymbol(string, pckage = CURRENT_PACKAGE, seen = new Set(pckage)) {
     // TODO coerce to js string.
     // TODO return 2nd return value :INTERNAL or :EXTERNAL
 
-    let res = pckage.internalSymbols[string];
-    if(res)
-        return res;
     res = pckage.externalSymbols[string];
     if(res)
-        return res;
+        return res; // :EXTERNAL
+
+    let res = pckage.internalSymbols[string];
+    if(res)
+        return res; // :INTERNAL
+
+    for(let x of this.packageUseList) {
+        if(!seen.has(x)) {
+            let res = findSymbol(string, x, seen);
+            if(res)
+                return res;
+        }
+    }
 }
 
 // find-package
@@ -48,6 +69,7 @@ export function findPackage(name) {
 
 // find-all-symbols
 // import
+
 // list-all-packages
 // rename-package
 // shadowing-import
@@ -55,7 +77,33 @@ export function findPackage(name) {
 // make-package
 
 // unexport
+export function unexport(symbols, pckage = CURRENT_PACKAGE) {
+    if(symbolp(symbols))
+        symbols = list(symbols);
+    
+    for(let x = symbols; consp(x); x = cdr(x)) {
+        let s = findSymbol(car(x), pckage);
+        if(!s)
+            throw "Symbol "+car(x)+" Not accessible";
+        delete this.externalSymbols[s.name];
+    }
+}
+
 // unintern
+export function unintern(symbols, pckage = CURRENT_PACKAGE) {
+    if(typeof symbols == "string")
+        symbols = list(symbols);
+    
+    for(let x = symbols; consp(x); x = cdr(x)) {
+        let s = findSymbol(car(x), pckage);
+        if(s) {
+            delete this.internalSymbols[s.name];
+            delete this.externalSymbols[s.name];
+            if(s.pckage === pckage)
+                s.pckage = null;
+        }
+    }
+}
 
 // in-package
 
@@ -64,7 +112,7 @@ export function findPackage(name) {
 
 export function intern(str, pckage=CURRENT_PACKAGE) {
     if(typeof str == "string") {
-        let sym = findSymbol(str, pckage);a
+        let sym = findSymbol(str, pckage);
         if(!sym) {
             return pckage.internalSymbols[sym.name] = new Sym(str, pckage);
         }
@@ -88,6 +136,9 @@ export function packageNicknames(pckage) {
 }
 
 // package-shadowing-symbols
+export function packageShadowingSymbols(pckage) {
+    return list.apply(null, Array.from(pckage.packageShadowingSymbols));
+}
 
 // package-use-list
 export function packageUseList(pckage) {
@@ -103,6 +154,7 @@ export function packageUsedByList(pckage) {
     return list.apply(null, pckage.packageUsedByList);
 }
 
+// packagep
 export function packagep(x) {
     return x instanceof Package;
 }
@@ -113,7 +165,6 @@ export let CURRENT_PACKAGE = new Package("COMMON-LISP-USER", ["CL-USER"]);
 
 // package-error
 // package-error-package
-
 
 /** SYMBOLS */
 export class Sym {
