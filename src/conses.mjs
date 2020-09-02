@@ -707,10 +707,9 @@ Cons.prototype[sequences.LENGTH] = Nil.prototype[sequences.LENGTH] = x => {
     if(res === NIL)
         throw "Cyclic list";
 }
-
 Nil.prototype[sequences.LENGTH] = x => 0;
 
-
+// reverse
 Cons.prototype[sequences.REVERSE] = Nil.prototype[sequences.REVERSE] = x => {
     if(nullp(x))
         return x;

@@ -1,4 +1,5 @@
-import {consp, cdr, list, copyList} from "./conses.mjs";
+import { consp, car, cdr, list, copyList} from "./conses.mjs";
+import { listp } from "./conses.mjs";
 
 /** PACKAGES */
 const packageNames = new Map();
@@ -9,17 +10,18 @@ export class Package {
         if(packageNames.has(name))
             throw "Package name in use "+name;
         packageNames.set(name, this);
-        for(let i=0; i<nicknames; i++) {
+        for(let i=0; i<nicknames.length; i++) {
             if(packageNames.has(nicknames[i]))
                 throw "Package name in use "+nicknames[i];
-            packageNames.add(nicknames[i], this);
+            packageNames.set(nicknames[i], this);
         }
+        
         this.nicknames = nicknames;
         this.internalSymbols = {};
         this.externalSymbols = {};
-        this.packageUseList = [];
-        this.packageUsedByList = [];
-        this.packageShadowingSymbols = new Set();
+        this.useList = [];
+        this.usedByList = [];
+        this.shadowingSymbols = new Set();
     }
 }
 
@@ -29,37 +31,33 @@ export const KEYWORD_PACKAGE = new Package("KEYWORD", []);
 
 // export
 export function $export(symbols, pckage = CURRENT_PACKAGE) {
-    if(symbolp(symbols))
+    if(!listp(symbols))
         symbols = list(symbols);
     
     for(let x = symbols; consp(x); x = cdr(x)) {
         let s = findSymbol(car(x), pckage);
         if(!s)
             throw "Symbol "+car(x)+" Not accessible";
-        this.externalSymbols[s.name] = s;
+        pckage.externalSymbols[s.name] = s;
     }
 }
 
 // find-symbol
-export function findSymbol(string, pckage = CURRENT_PACKAGE, seen = new Set(pckage)) {
+export function findSymbol(string, pckage = CURRENT_PACKAGE) {
     // TODO coerce to js string.
     // TODO return 2nd return value :INTERNAL or :EXTERNAL
 
-    res = pckage.externalSymbols[string];
+    let res = pckage.externalSymbols[string];
     if(res)
         return res; // :EXTERNAL
 
-    let res = pckage.internalSymbols[string];
+    res = pckage.internalSymbols[string];
     if(res)
         return res; // :INTERNAL
 
-    for(let x of this.packageUseList) {
-        if(!seen.has(x)) {
-            let res = findSymbol(string, x, seen);
-            if(res)
-                return res;
-        }
-    }
+    for(let x of pckage.useList)
+        if(x.externalSymbols[string])
+            return x.externalSymbols[string];
 }
 
 // find-package
@@ -78,7 +76,7 @@ export function findPackage(name) {
 
 // unexport
 export function unexport(symbols, pckage = CURRENT_PACKAGE) {
-    if(symbolp(symbols))
+    if(!listp(symbols))
         symbols = list(symbols);
     
     for(let x = symbols; consp(x); x = cdr(x)) {
@@ -91,7 +89,7 @@ export function unexport(symbols, pckage = CURRENT_PACKAGE) {
 
 // unintern
 export function unintern(symbols, pckage = CURRENT_PACKAGE) {
-    if(typeof symbols == "string")
+    if(!listp(symbols))
         symbols = list(symbols);
     
     for(let x = symbols; consp(x); x = cdr(x)) {
@@ -108,14 +106,47 @@ export function unintern(symbols, pckage = CURRENT_PACKAGE) {
 // in-package
 
 // unuse-package
-// use-package
+export function unusePackage(packagesToUnuse, pckage = CURRENT_PACKAGE) {
+    if(!listp(packagesToUnuse))
+        packagesToUnuse = list(packagesToUnuse);
+    
+    for(let x = packagesToUnuse; consp(x); x = cdr(x)) {
+        let s = car(x);
+        if(s instanceof Symbol)
+            s = s.name;
+        s = findPackage(s);
+        if(s) {
+            s.pckage.useList.delete(s);
+            s.usedByList.delete(s.pckage);
+        }
+    }
+}
 
+// use-package
+export function usePackage(packagesToUse, pckage = CURRENT_PACKAGE) {
+    if(!listp(packagesToUse))
+        packagesToUse = list(packagesToUse);
+    
+    for(let x = packagesToUse; consp(x); x = cdr(x)) {
+        let s = car(x);
+        if(s instanceof Symbol)
+            s = s.name;
+        s = findPackage(s);
+        if(s) {
+            // TODO: ensure we aren't stupid.
+            pckage.useList.push(s);
+            s.usedByList.push(pckage);
+        } else
+            throw "Not a package "+car(x);
+    }
+}
+
+// intern
 export function intern(str, pckage=CURRENT_PACKAGE) {
     if(typeof str == "string") {
         let sym = findSymbol(str, pckage);
-        if(!sym) {
-            return pckage.internalSymbols[sym.name] = new Sym(str, pckage);
-        }
+        if(!sym)
+            return pckage.internalSymbols[str] = new Sym(str, pckage);
         return sym;
     } else
         throw "Not a symbol";
@@ -137,7 +168,7 @@ export function packageNicknames(pckage) {
 
 // package-shadowing-symbols
 export function packageShadowingSymbols(pckage) {
-    return list.apply(null, Array.from(pckage.packageShadowingSymbols));
+    return list.apply(null, Array.from(pckage.shadowingSymbols));
 }
 
 // package-use-list
