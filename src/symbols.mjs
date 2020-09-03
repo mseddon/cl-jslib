@@ -1,18 +1,17 @@
 import { consp, cons, car, cdr, list, listp, copyList, NIL} from "./conses.mjs";
+import { lispInstance } from "./lisp-instance.mjs"
 
 /** PACKAGES */
-const packageNames = new Map();
-
 export class Package {
     constructor(name, nicknames = []) {
         this.name = name;
-        if(packageNames.has(name))
+        if(lispInstance.packageNames.has(name))
             throw "Package name in use "+name;
-        packageNames.set(name, this);
+        lispInstance.packageNames.set(name, this);
         for(let i=0; i<nicknames.length; i++) {
-            if(packageNames.has(nicknames[i]))
+            if(lispInstance.packageNames.has(nicknames[i]))
                 throw "Package name in use "+nicknames[i];
-            packageNames.set(nicknames[i], this);
+                lispInstance.packageNames.set(nicknames[i], this);
         }
 
         this.nicknames = nicknames;
@@ -29,11 +28,9 @@ export class Package {
 }
 
 // This is dumb. Make this swappable later for multi environment.
-export const CL_PACKAGE = new Package("COMMON-LISP", ["CL"]);
-export const KEYWORD_PACKAGE = new Package("KEYWORD", []);
 
 // export
-export function $export(symbols, pckage = CURRENT_PACKAGE) {
+export function $export(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -46,7 +43,7 @@ export function $export(symbols, pckage = CURRENT_PACKAGE) {
 }
 
 // find-symbol
-export function findSymbol(string, pckage = CURRENT_PACKAGE) {
+export function findSymbol(string, pckage = lispInstance.CURRENT_PACKAGE) {
     // TODO coerce to js string.
     // TODO return 2nd return value :INTERNAL or :EXTERNAL
 
@@ -65,7 +62,7 @@ export function findSymbol(string, pckage = CURRENT_PACKAGE) {
 
 // find-package
 export function findPackage(name) {
-    return packageNames.get(name);
+    return lispInstance.packageNames.get(name);
 }
 
 // find-all-symbols
@@ -74,7 +71,7 @@ export function findPackage(name) {
 // list-all-packages
 export function listAllPackages() {
     let head = NIL;
-    for(let p of new Set(packageNames.values()))
+    for(let p of new Set(lispInstance.packageNames.values()))
         head = cons(p, head);
     return head;
 }
@@ -85,7 +82,7 @@ export function listAllPackages() {
 // make-package
 
 // unexport
-export function unexport(symbols, pckage = CURRENT_PACKAGE) {
+export function unexport(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -98,7 +95,7 @@ export function unexport(symbols, pckage = CURRENT_PACKAGE) {
 }
 
 // unintern
-export function unintern(symbols, pckage = CURRENT_PACKAGE) {
+export function unintern(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -107,14 +104,16 @@ export function unintern(symbols, pckage = CURRENT_PACKAGE) {
         if(s) {
             delete this.internalSymbols[s.name];
             delete this.externalSymbols[s.name];
-            if(s.pckage === pckage)
+            if(s.pckage === pckage) {
                 s.pckage = null;
+                delete s.kw;
+            }
         }
     }
 }
 
 // unuse-package
-export function unusePackage(packagesToUnuse, pckage = CURRENT_PACKAGE) {
+export function unusePackage(packagesToUnuse, pckage = lispInstance.CURRENT_PACKAGE) {
     if(!listp(packagesToUnuse))
         packagesToUnuse = list(packagesToUnuse);
     
@@ -131,16 +130,17 @@ export function unusePackage(packagesToUnuse, pckage = CURRENT_PACKAGE) {
 }
 
 // use-package
-export function usePackage(packagesToUse, pckage = CURRENT_PACKAGE) {
+export function usePackage(packagesToUse, pckage = lispInstance.CURRENT_PACKAGE) {
     if(!listp(packagesToUse))
         packagesToUse = list(packagesToUse);
     
     for(let x = packagesToUse; consp(x); x = cdr(x)) {
         let s = car(x);
-        if(s instanceof Symbol)
+        if(s instanceof Sym)
             s = s.name;
-        s = findPackage(s);
-        if(s) {
+        if(typeof s === "string")
+            s = findPackage(s);
+        if(s instanceof Package) {
             // TODO: ensure we aren't stupid.
             pckage.useList.push(s);
             s.usedByList.push(pckage);
@@ -150,7 +150,7 @@ export function usePackage(packagesToUse, pckage = CURRENT_PACKAGE) {
 }
 
 // intern
-export function intern(str, pckage=CURRENT_PACKAGE) {
+export function intern(str, pckage=lispInstance.CURRENT_PACKAGE) {
     if(typeof str == "string") {
         let sym = findSymbol(str, pckage);
         if(!sym)
@@ -199,9 +199,6 @@ export function packagep(x) {
 }
 
 // *package*
-export let CURRENT_PACKAGE = new Package("COMMON-LISP-USER", ["CL-USER"]);
-
-
 // package-error
 // package-error-package
 
@@ -210,7 +207,23 @@ export class Sym {
     constructor(name, pckage) {
         this.name = name;
         this.pckage = pckage;
+        if(this.pckage && this.pckage.name === "KEYWORD")
+            this.kw = true;
+        
         this.plist = null;
+    }
+
+    toString() {
+        if(!this.pckage)
+            return "#:"+this.name;
+
+        if(keywordp(this))
+            return ":"+this.name;
+
+        if(this.pckage === lispInstance.CURRENT_PACKAGE)
+            return this.name;
+
+        return this.pckage.name+"::"+this.name;
     }
 }
 
@@ -221,7 +234,7 @@ export function symbolp(x) {
 
 // keywordp
 export function keywordp(x) {
-    return x instanceof Sym && x.pckage === KEYWORD_PACKAGE;
+    return symbolp(x) && x.kw;
 }
 
 // make-symbol
@@ -245,7 +258,7 @@ export function gensym(x = "G") {
 export let gensymCounter = 0;
 
 // gentemp
-export function gentemp(prefix = "T", pckage = CURRENT_PACKAGE) {
+export function gentemp(prefix = "T", pckage = lispInstance.CURRENT_PACKAGE) {
     return new pckage.intern(prefix+(gensymCounter++));
 }
 

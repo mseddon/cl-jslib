@@ -9,11 +9,30 @@ import * as sequences from "./sequences.mjs";
 import * as symbols from "./symbols.mjs";
 import * as strings from "./strings.mjs";
 
+import { lispInstance, setInstance, LispInstance } from "./lisp-instance.mjs"
+
+function initializeInstance(inst) {
+    setInstance(inst);
+    inst.packageNames = new Map();
+    inst.CL_PACKAGE = new symbols.Package("COMMON-LISP", ["CL"]);
+    inst.CURRENT_PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
+    symbols.usePackage(inst.CL_PACKAGE, inst.CURRENT_PACKAGE);
+    inst.KEYWORD_PACKAGE = new symbols.Package("KEYWORD", []);;    
+    return inst;
+}
+
 let env = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
+
+
+function makeInstance() {
+    return setInstance(initializeInstance(new LispInstance()));
+}
+
+makeInstance();
 
 globalThis["clJsLib"] = env;
 
-let CL = symbols.CL_PACKAGE;
+let CL = lispInstance.CL_PACKAGE;
 
 let foo = new symbols.Package("FOO");
 
@@ -34,4 +53,6 @@ symbols.unusePackage(conses.list("CL"), foo);
 let str = new strings.LispString("Hello\nworld this is fun");
 console.log(strings.stringUpcase(str)+"")
 
-console.log(str+"");
+console.log(symbols.intern("HELLO", lispInstance.CURRENT_PACKAGE)+"")
+
+console.log(lispInstance.CURRENT_PACKAGE+"");

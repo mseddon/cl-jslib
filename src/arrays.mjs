@@ -179,7 +179,7 @@ export function vectorPush(vector, value) {
         throw "Vector does not have fill pointer";
     if(vector.fillPointer >= vector._data.length)
         return;
-    return vector._data[vector.fillPointer++] = value;
+    vector._data[vector.fillPointer++] = value;
 }
 
 // vector-push-extend
