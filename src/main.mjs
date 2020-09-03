@@ -27,38 +27,17 @@ function initializeInstance(inst) {
     return inst;
 }
 
-let env = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
-
+global["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
 
 function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
 }
 
-makeInstance();
+try {
+    makeInstance();
 
-globalThis["CL-JSLIB"] = env;
-
-let CL = lispInstance.CL_PACKAGE;
-
-let foo = new symbols.Package("FOO");
-
-
-let arr = new arrays.LispVector(20, [2]);
-arr.fillPointer = 0;
-arrays.vectorPush(arr, 1);
-arrays.vectorPush(arr, 2);
-arrays.vectorPush(arr, 3);
-console.log(arr+"");
-
-symbols.intern("HI", CL);
-symbols.usePackage(conses.list("CL"), foo);
-symbols.$export("HI", CL);
-
-symbols.unusePackage(conses.list("CL"), foo);
-
-let str = new strings.LispString("Hello\nworld this is fun");
-console.log(strings.stringUpcase(str)+"")
-
-console.log(symbols.intern("HELLO", lispInstance.CURRENT_PACKAGE)+"")
-
-console.log(lispInstance.CURRENT_PACKAGE+"");
+    let is = streams.makeStringInputStream("2445 foo-bar");
+    console.log(reader.read(is)+"");
+} catch(e) {
+    console.error(e);
+}

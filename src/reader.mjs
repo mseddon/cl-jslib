@@ -1,4 +1,8 @@
 import { readChar, peekChar, unreadChar } from "./streams.mjs"
+import { LispChar } from "./characters.mjs";
+import { digitCharP } from "./characters.mjs";
+import { lispInstance } from "./lisp-instance.mjs";
+import { intern } from "./symbols.mjs";
 export class Readtable {
     constructor(r = null) {
         if(r) {
@@ -39,6 +43,8 @@ coreSyntax["\\"] = "single escape";
 coreSyntax["|"] = "multiple escape";
 
 function syntaxType(x) {
+    if(x instanceof LispChar)
+        x = x.value;
     return coreSyntax[x] || "invalid";
 }
 
@@ -65,24 +71,46 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
     let token = "";
     function readToken() {
         // OM NOM NOM
+        outer: for(;;) {
+            let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
+            let res = syntaxType(ch);
+            switch(res) {
+                case "single escape":
+                    potentialNumber = false;
+                    ch = readChar(inputStream, true, eofValue, recursiveP);
+                    token += ch.value;
+                    continue;
+                case "multiple escape":
+                    potentialNumber = false;
+                    inEscape = !inEscape;
+                case "constituent":
+                    if(potentialNumber)
+                        potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
+                    token += ch.value;
+                    continue;
+                case "whitespace":
+                default:
+                    break outer;
+            }
+        }
     }
 
     outer: for(;;) {
         // if inputStream EOF, bail eofy
 
         // read character x from inputStream.
-        let x = readChar(inputStream, eofErrorP, eofValue, recursiveP);
-        let res;
+        let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
+        let res = syntaxType(ch);
         let inEscape;
-        switch(res = syntaxType(x)) {
+        switch(res) {
             case "invalid":
                 throw "Invalid character";
             case "whitespace":
                 continue outer;
             case "single escape":
                 potentialNumber = false;
-                let x = readChar(inputStream, true, eofValue, recursiveP);
-                token += x;
+                ch = readChar(inputStream, true, eofValue, recursiveP);
+                token += ch.value;
                 readToken();
                 break;
             case "multiple escape":
@@ -91,18 +119,27 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                 readToken();
                 break;
             case "constituent":
-                token += x;
+                token += ch.value;
+                if(ch.value !== '-')
+                    potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
                 readToken();
                 break;
             default: {
                 if(res instanceof MacroChar) {
-                    res = res.fn(inputStream, x);
+                    res = res.fn(inputStream, ch);
                     if(res === undefined) // function returned zero values. re-enter
                         continue outer;
                     return res // function returned a single result (hopefully ;) - return it.
                 }
                 throw "DERP";
             }
+        }
+        if(potentialNumber) {
+            let num = parseInt(token, lispInstance.READ_BASE);
+            if(!isNaN(num)) {
+                return Number(num);
+            }
+            return intern(res);
         }
     }
 }
