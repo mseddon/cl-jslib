@@ -34,6 +34,10 @@ export class LispVector extends LispArray {
     [ELT](me, n) {
         return svref(me, n);
     }
+
+    [LENGTH](me) {
+        return this.fillPointer !== undefined ? this.fillPointer : this._data.length;
+    }
 }
 
 // make-array

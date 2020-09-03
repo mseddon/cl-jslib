@@ -31,4 +31,7 @@ symbols.$export("HI", CL);
 
 symbols.unusePackage(conses.list("CL"), foo);
 
-console.log(sequences.elt(new strings.LispString("Hello\nworld this is fun"), 2)+"")
+let str = new strings.LispString("Hello\nworld this is fun");
+console.log(strings.stringUpcase(str)+"")
+
+console.log(str+"");
