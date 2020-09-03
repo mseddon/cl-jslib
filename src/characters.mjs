@@ -1,5 +1,23 @@
 const chars = {};
 const codes = {};
+const charNames = {
+    " ": "Space",
+    "\n": "Newline",
+    "\t": "Tab",
+    "\v": "Page",
+    "\r": "Linefeed",
+    "\b": "Backspace",
+    "\x7f": "Rubout",
+}
+
+function invertBijection(x) {
+    let out = {};
+    for(let key in x)
+        out[x[key]] = key;
+    return out;
+}
+
+const nameChars = invertBijection(charNames);
 
 export class LispChar {
     constructor(ch) {
@@ -9,6 +27,10 @@ export class LispChar {
         this.charCode = ch.charCodeAt(0);
         chars[ch] = this;
         codes[this.charCode] = this;
+    }
+
+    toString() {
+        return "#\\"+charName(this);
     }
 }
 
@@ -242,9 +264,7 @@ export function alphanumericp(ch) {
 }
 
 // digit-char
-
-// digit-char-p
-export function digitCharP(x, base = 10) { // TODO: Base
+export function digitChar(x, radix = 10) {
     if(!characterp(x))
         throw "Type Error"
     if(x.value >= '0' && x.value <= '9')
@@ -252,8 +272,24 @@ export function digitCharP(x, base = 10) { // TODO: Base
     return false;
 }
 
+// digit-char-p
+export function digitCharP(x, radix = 10) { // TODO: Base
+    return !!digitChar(x, radix);
+}
+
 // graphic-char-p
+export function graphicCharP(ch) {
+    if(ch == ' ')
+        return false;
+    return standardCharP(ch);
+}
+
 // standard-char-p
+export function standardCharP(ch) {
+    if(!characterp(ch))
+        throw "Type Error";
+    return !!ch.value.match(/[a-zA-Z0-9!$"'(),_\-./:;?+<=>#%&*@[\\\]{|}`^~]/);
+}
 
 // char-upcase
 export function charUpcase(ch) {
@@ -311,4 +347,17 @@ export function codeChar(code) {
 export const charCodeLimit = 65535;
 
 // char-name
+export function charName(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return charNames[ch.value] || ch.value;
+}
+
 // name-char
+export function nameChar(name) {
+    if(typeof name !== "string")
+        throw "Type Error"
+    if(nameChars[name])
+        return nameChars[name];
+    throw "Not a valid character name: "+name;
+}
