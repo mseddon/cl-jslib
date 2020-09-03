@@ -2,6 +2,7 @@ import { list } from "./conses.mjs"
 
 export class LispArray {
     constructor(dimensions, initial = []) {
+        this.displacement = 0;
         this.dimensions = dimensions;
         this._row_minor = [dimensions[0]];
         for(let i=1; i<dimensions.length; i++)
@@ -30,7 +31,7 @@ export function aref(array, ...subscripts) {
         if(subscripts.length < array.dimensions.length)
             throw "Not enough subscripts to array";
         if(subscripts.length > array.dimensions.length)
-            throw "Not enough subscripts to array";
+            throw "Too many subscripts to array";
     }
     let index = 0;
     for(let i=0; i<subscripts.length; i++) {
@@ -38,7 +39,7 @@ export function aref(array, ...subscripts) {
             throw "Array index out of bounds for dimension "+i+", "+subscripts[i];
         index += subscripts[i]*array._row_minor[i];
     }
-    return array._data[index];
+    return array._data[array.displacement+index];
 }
 
 // array-dimension
@@ -69,6 +70,11 @@ export function arrayHasFillPointer(array) {
 }
 
 // array-displacement
+export function arrayDisplacement(array) {
+    if(!arrayp(array))
+        throw "Type Error";
+    return array.displacement;
+}
 
 // array-in-bounds-p
 export function arrayInBoundsP(array, ...subscripts) {
@@ -119,10 +125,13 @@ export function fillPointer(array) {
 // array-total-size-limit
 
 // simple-vector-p
+export function simpleVectorP(vector) {
+    return vector instanceof LispVector;
+}
 
 // svref
 export function svref(vector, index) {
-    if(!vectorp(vector))
+    if(!simpleVectorp(vector))
         throw "Type Error";
     if(index < 0 || index > vector._data.length)
         throw "Vector index out of range";
@@ -135,8 +144,25 @@ export function vector(...objects) {
 }
 
 // vector-pop
+export function vectorPop(vector) {
+    if(!arrayHasFillPointer(vector))
+        throw "Vector does not have fill pointer";
+    if(vector.fillPointer === 0)
+        throw "vector-pop underflow";
+    return vector._data[vector.fillPointer--];
+}
+
 // vector-push
+export function vectorPush(vector, value) {
+    if(!arrayHasFillPointer(vector))
+        throw "Vector does not have fill pointer";
+    if(vector.fillPointer >= vector._data.length)
+        return;
+    return vector._data[++vector.fillPointer] = value;
+}
+
 // vector-push-extend
+
 // vectorp
 export function vectorp(array) {
     return array instanceof LispVector;
