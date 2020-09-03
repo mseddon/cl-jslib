@@ -1,4 +1,5 @@
 const chars = {};
+const codes = {};
 
 export class LispChar {
     constructor(ch) {
@@ -7,6 +8,7 @@ export class LispChar {
         this.value = ch;
         this.charCode = ch.charCodeAt(0);
         chars[ch] = this;
+        codes[this.charCode] = this;
     }
 }
 
@@ -108,7 +110,6 @@ export function charGte(...chars) {
     }
     return true;
 }
-
 
 // char-equal
 export function charEqual(...chars) {
@@ -212,6 +213,15 @@ export function charNotLessP(...chars) {
 }
 
 // character
+export function character(character) {
+    if(character instanceof LispChar)
+        return character;
+    if(typeof character === "number")
+        return codeChar(character);
+    if(typeof character === "string")
+        return new LispChar(character[0]);
+    throw "Not a character designator";
+}
 
 // characterp
 export function characterp(x) {
@@ -281,8 +291,24 @@ export function bothCaseP(ch) {
 }
 
 // char-code
+export function charCode(ch) {
+    if(!characterp(ch))
+        throw "Type Error"
+    return ch.charCode;
+}
+
 // char-int
+export const charInt = charCode;
+
 // code-char
+export function codeChar(code) {
+    if(codes[code])
+        return codes[code];
+    return new LispChar(String.fromCharCode(code));
+}
+
 // char-code-limit
+export const charCodeLimit = 65535;
+
 // char-name
 // name-char

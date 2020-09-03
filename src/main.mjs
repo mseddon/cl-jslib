@@ -9,7 +9,7 @@ import * as sequences from "./sequences.mjs";
 //import "./string";
 import * as symbols from "./symbols.mjs";
 
-let env = {...conses, ...streams, ...characters, ...equal, ...reader, ...symbols, ...sequences};
+let env = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences};
 
 /** This line forces terser to keep all the library */
 if(global && global["T"])

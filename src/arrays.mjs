@@ -1,16 +1,38 @@
 import { list } from "./conses.mjs"
 
 export class LispArray {
-    constructor(dimensions) {
+    constructor(dimensions, initial = []) {
         this.dimensions = dimensions;
-        this._data = Array(this.dimensions.reduce((x, y) => x * y));
+        this._row_minor = [dimensions[0]];
+        for(let i=1; i<dimensions.length; i++)
+            this._row_minor.push(dimensions[i]*this._row_minor[this._row_minor.length-1]);
+        initial.length = this.dimensions.reduce((x, y) => x * y);
+        this._data = initial;
     }
 }
 
 // make-array
 // adjust-array
 // adjustable-array-p
+
 // aref
+export function aref(array, ...subscripts) {
+    if(!arrayp(array))
+        throw "Type Error";
+    if(subscripts.length !== array.dimensions.length) {
+        if(subscripts.length < array.dimensions.length)
+            throw "Not enough subscripts to array";
+        if(subscripts.length > array.dimensions.length)
+            throw "Not enough subscripts to array";
+    }
+    let index = 0;
+    for(let i=0; i<subscripts.length; i++) {
+        if(subscripts[i] >= array.dimensions[i])
+            throw "Array index out of bounds for dimension "+i+", "+subscripts[i];
+        index += subscripts[i]*array._row_minor[i];
+    }
+    return array._data[index];
+}
 
 // array-dimension
 export function arrayDimension(a, axis) {
