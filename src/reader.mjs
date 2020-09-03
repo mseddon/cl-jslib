@@ -4,6 +4,8 @@ import { digitCharP } from "./characters.mjs";
 import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
 export class Readtable {
+    case = "UPCASE";
+
     constructor(r = null) {
         if(r) {
             this.coreSyntax = {...r.coreSyntax};
@@ -29,7 +31,7 @@ function charSyntaxRange(start, end, type) {
 
 function charSyntaxSet(str, type) {
     for(let i=0; i<str.length; i++)
-        coreSyntax[String.fromCharCode(i)] = type;
+        coreSyntax[str[i]] = type;
 }
 
 
@@ -67,14 +69,38 @@ export function copyReadtable(x) {
 // This totally doesn't work yet.
 export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null, object = eofValue) {
     let potentialNumber = true;
-
+    let inEscape = false;
     let token = "";
+    function caseConvert(ch) {
+        switch(lispInstance.READTABLE.case) {
+            case "UPCASE":
+                return ch.toUpperCase();
+            case "DOWNCASE":
+                return ch.toLowerCase();
+            case "INVERT":
+                if(ch.toLowerCase() == ch && ch.toUpperCase() != ch)
+                    return ch.toUpperCase();
+                if(ch.toUppwerCase() == ch && ch.toLowerCase() != ch)
+                    return ch.toLowerCase();
+        }
+        return ch;
+    }
+
     function readToken() {
         // OM NOM NOM
         outer: for(;;) {
             let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
             let res = syntaxType(ch);
+            if(inEscape && res !== "multiple escape") {
+                token += ch.value;
+                continue;
+            }
+
             switch(res) {
+                case "invalid":
+                    throw "Invalid character";
+                case "whitespace":
+                    return;
                 case "single escape":
                     potentialNumber = false;
                     ch = readChar(inputStream, true, eofValue, recursiveP);
@@ -83,12 +109,12 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                 case "multiple escape":
                     potentialNumber = false;
                     inEscape = !inEscape;
+                    continue;
                 case "constituent":
                     if(potentialNumber)
                         potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
-                    token += ch.value;
+                    token += caseConvert(ch.value);
                     continue;
-                case "whitespace":
                 default:
                     break outer;
             }
@@ -101,7 +127,6 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
         // read character x from inputStream.
         let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
         let res = syntaxType(ch);
-        let inEscape;
         switch(res) {
             case "invalid":
                 throw "Invalid character";
@@ -119,7 +144,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                 readToken();
                 break;
             case "constituent":
-                token += ch.value;
+                token += caseConvert(ch.value);
                 if(ch.value !== '-')
                     potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
                 readToken();
@@ -136,18 +161,23 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
         }
         if(potentialNumber) {
             let num = parseInt(token, lispInstance.READ_BASE);
-            if(!isNaN(num)) {
+            if(!isNaN(num))
                 return Number(num);
-            }
-            return intern(res);
         }
+        return intern(token);
     }
 }
 
 // read-preserving-whitespace
 // read-delimited-list
 // read-from-string
+
 // readtable-case
+export function readtableCase(x = lispInstance.READTABLE) {
+    if(!readtablep(x))
+        throw "Type error";
+    return intern(x.case, lispInstance.KEYWORD_PACKAGE);
+}
 
 // readtablep
 export function readtablep(x) {

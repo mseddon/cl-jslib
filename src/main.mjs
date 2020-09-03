@@ -9,14 +9,14 @@ import * as sequences from "./sequences.mjs";
 import * as symbols from "./symbols.mjs";
 import * as strings from "./strings.mjs";
 
-import { lispInstance, setInstance, LispInstance } from "./lisp-instance.mjs"
+import { setInstance, LispInstance } from "./lisp-instance.mjs"
 
 function initializeInstance(inst) {
     setInstance(inst);
     inst.packageNames = new Map();
     inst.CL_PACKAGE = new symbols.Package("COMMON-LISP", ["CL"]);
-    inst.CURRENT_PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
-    symbols.usePackage(inst.CL_PACKAGE, inst.CURRENT_PACKAGE);
+    inst.PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
+    symbols.usePackage(inst.CL_PACKAGE, inst.PACKAGE);
     inst.KEYWORD_PACKAGE = new symbols.Package("KEYWORD", []);
 
     inst.READ_BASE = 10;
@@ -27,7 +27,7 @@ function initializeInstance(inst) {
     return inst;
 }
 
-global["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
+globalThis["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
 
 function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
@@ -36,8 +36,10 @@ function makeInstance() {
 try {
     makeInstance();
 
-    let is = streams.makeStringInputStream("2445 foo-bar");
+    let is = streams.makeStringInputStream("fo|o-b|ar ");
     console.log(reader.read(is)+"");
+
+    console.log(reader.readtableCase()+"")
 } catch(e) {
     console.error(e);
 }

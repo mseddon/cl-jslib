@@ -30,7 +30,7 @@ export class Package {
 // This is dumb. Make this swappable later for multi environment.
 
 // export
-export function $export(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
+export function $export(symbols, pckage = lispInstance.PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -43,7 +43,7 @@ export function $export(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
 }
 
 // find-symbol
-export function findSymbol(string, pckage = lispInstance.CURRENT_PACKAGE) {
+export function findSymbol(string, pckage = lispInstance.PACKAGE) {
     // TODO coerce to js string.
     // TODO return 2nd return value :INTERNAL or :EXTERNAL
 
@@ -82,7 +82,7 @@ export function listAllPackages() {
 // make-package
 
 // unexport
-export function unexport(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
+export function unexport(symbols, pckage = lispInstance.PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -95,7 +95,7 @@ export function unexport(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
 }
 
 // unintern
-export function unintern(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
+export function unintern(symbols, pckage = lispInstance.PACKAGE) {
     if(!listp(symbols))
         symbols = list(symbols);
     
@@ -113,7 +113,7 @@ export function unintern(symbols, pckage = lispInstance.CURRENT_PACKAGE) {
 }
 
 // unuse-package
-export function unusePackage(packagesToUnuse, pckage = lispInstance.CURRENT_PACKAGE) {
+export function unusePackage(packagesToUnuse, pckage = lispInstance.PACKAGE) {
     if(!listp(packagesToUnuse))
         packagesToUnuse = list(packagesToUnuse);
     
@@ -130,7 +130,7 @@ export function unusePackage(packagesToUnuse, pckage = lispInstance.CURRENT_PACK
 }
 
 // use-package
-export function usePackage(packagesToUse, pckage = lispInstance.CURRENT_PACKAGE) {
+export function usePackage(packagesToUse, pckage = lispInstance.PACKAGE) {
     if(!listp(packagesToUse))
         packagesToUse = list(packagesToUse);
     
@@ -150,7 +150,7 @@ export function usePackage(packagesToUse, pckage = lispInstance.CURRENT_PACKAGE)
 }
 
 // intern
-export function intern(str, pckage=lispInstance.CURRENT_PACKAGE) {
+export function intern(str, pckage=lispInstance.PACKAGE) {
     if(typeof str == "string") {
         let sym = findSymbol(str, pckage);
         if(!sym)
@@ -219,7 +219,7 @@ export class Sym {
         if(keywordp(this))
             return ":"+this.name;
 
-        if(this.pckage === lispInstance.CURRENT_PACKAGE)
+        if(this.pckage === lispInstance.PACKAGE)
             return this.name;
 
         return this.pckage.name+"::"+this.name;
@@ -257,7 +257,7 @@ export function gensym(x = "G") {
 export let gensymCounter = 0;
 
 // gentemp
-export function gentemp(prefix = "T", pckage = lispInstance.CURRENT_PACKAGE) {
+export function gentemp(prefix = "T", pckage = lispInstance.PACKAGE) {
     return new pckage.intern(prefix+(gensymCounter++));
 }
 
