@@ -1,3 +1,4 @@
+import { ELT, LENGTH } from "./sequences.mjs"
 import { list } from "./conses.mjs"
 
 export class LispArray {
@@ -16,7 +17,23 @@ export class LispVector extends LispArray {
     constructor(length, initial) {
         super([length], initial);
     }
+
     fillPointer = undefined;
+
+    toString() {
+        let end = this.fillPointer !== undefined ? this.fillPointer : this._data.length;
+        let out = "#(";
+        for(let i=0; i<end; i++) {
+            out+=this._data[i];
+            if(i+1 < end)
+                out += " ";
+        }
+        return out+")";
+    }
+
+    [ELT](me, n) {
+        return svref(me, n);
+    }
 }
 
 // make-array
@@ -131,7 +148,7 @@ export function simpleVectorP(vector) {
 
 // svref
 export function svref(vector, index) {
-    if(!simpleVectorp(vector))
+    if(!simpleVectorP(vector))
         throw "Type Error";
     if(index < 0 || index > vector._data.length)
         throw "Vector index out of range";
@@ -147,9 +164,9 @@ export function vector(...objects) {
 export function vectorPop(vector) {
     if(!arrayHasFillPointer(vector))
         throw "Vector does not have fill pointer";
-    if(vector.fillPointer === 0)
+    if(vector.fillPointer <= 0)
         throw "vector-pop underflow";
-    return vector._data[vector.fillPointer--];
+    return vector._data[--vector.fillPointer];
 }
 
 // vector-push
@@ -158,7 +175,7 @@ export function vectorPush(vector, value) {
         throw "Vector does not have fill pointer";
     if(vector.fillPointer >= vector._data.length)
         return;
-    return vector._data[++vector.fillPointer] = value;
+    return vector._data[vector.fillPointer++] = value;
 }
 
 // vector-push-extend
