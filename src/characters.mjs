@@ -259,8 +259,9 @@ export function alphaCharP(x) {
     return false;
 }
 
+// alphanumericp
 export function alphanumericp(ch) {
-    return boolify(alphaCharP(ch)) || boolify(digitCharP(ch)) ? true : false;
+    return !!(alphaCharP(ch) || digitCharP(ch));
 }
 
 // digit-char

@@ -447,7 +447,6 @@ export function last(x) {
     return car(x);
 }
 
-
 // ldiff
 export function ldiff(list, object) {
     if(eql(list, object) || atom(list))
@@ -648,8 +647,24 @@ export const rassoc = (item, alist) => {
 // rassoc-if-not
 
 // get-properties
+
 // getf
-// remf
+export function getf(plist, indicator, deflt = NIL) {
+    while(consp(plist)) {
+        if(car(plist) === indicator) {
+            plist = cdr(plist);
+            if(!consp(plist))
+                throw "Invalid plist";
+            return car(plist);
+        } else {
+            plist = cdr(plist);
+            if(!consp(plist))
+                throw "Invalid plist";
+            plist = cdr(plist);
+        }
+    }
+    return deflt;
+}
 
 // intersection
 export function intersection(list1, list2) {

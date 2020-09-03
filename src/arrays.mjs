@@ -11,6 +11,13 @@ export class LispArray {
     }
 }
 
+export class LispVector extends LispArray {
+    constructor(length, initial) {
+        super([length], initial);
+    }
+    fillPointer = undefined;
+}
+
 // make-array
 // adjust-array
 // adjustable-array-p
@@ -53,7 +60,14 @@ export function arrayDimensions(a) {
 }
 
 // array-element-type
+
 // array-has-fill-pointer-p
+export function arrayHasFillPointer(array) {
+    if(!arrayp(array))
+        throw "Type Error";
+    return array.fillPointer !== undefined;
+}
+
 // array-displacement
 
 // array-in-bounds-p
@@ -91,6 +105,12 @@ export function arrayp(x) {
 }
 
 // fill-pointer
+export function fillPointer(array) {
+    if(!arrayHasFillPointer(array))
+        throw "Array does not have a fill pointer";
+    return array.fillPointer;
+}
+
 // row-major-aref
 // upgraded-array-element-type
 
@@ -105,6 +125,9 @@ export function arrayp(x) {
 // vector-push
 // vector-push-extend
 // vectorp
+export function vectorp(array) {
+    return array instanceof LispVector;
+}
 
 // bit
 // sbit

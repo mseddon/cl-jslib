@@ -10,19 +10,8 @@ import * as sequences from "./sequences.mjs";
 import * as symbols from "./symbols.mjs";
 
 let env = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences};
+
 globalThis["clJsLib"] = env;
-
-let lst = conses.list(1, 2, 3, 4);
-
-let s = new streams.StringInputStream("Hello\nWorld");
-
-/*
-console.log(sequences.reverse(lst)); // yay, sequence functions!
-
-console.log(streams.readLine(s, false));
-console.log(streams.readLine(s, false));
-
-*/
 
 let CL = symbols.CL_PACKAGE;
 
