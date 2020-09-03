@@ -39,6 +39,23 @@ function charSyntaxSet(str, type) {
         standardSyntax[str[i]] = type;
 }
 
+export class MacroChar {
+    constructor(terminating = false, fn) {
+        this.terminating = terminating;
+        this.fn = fn;
+    };
+}
+
+export class DispatchMacroCharacter {
+    constructor(terminating = false) {
+        this.terminating = terminating;
+    }
+
+    fn() {
+        throw "Dispatch macro characters are NYI"
+    }
+}
+
 charSyntaxRange("0", "9", "constituent");
 charSyntaxRange("a", "z", "constituent");
 charSyntaxRange("A", "Z", "constituent");
@@ -48,18 +65,14 @@ charSyntaxSet("\t\n\r\f\v ", "whitespace");
 charSyntaxSet("\\", "single escape");
 charSyntaxSet("|", "multiple escape");
 
+standardSyntax['#'] = new DispatchMacroCharacter(true);
+
 function syntaxType(x) {
     if(x instanceof LispChar)
         x = x.value;
     return lispInstance.READTABLE.syntax[x] || "invalid";
 }
 
-export class MacroChar {
-    constructor(terminating = false, fn) {
-        this.terminating = terminating;
-        this.fn = fn;
-    };
-}
 
 // copy-readtable
 export function copyReadtable(x) {
@@ -68,8 +81,13 @@ export function copyReadtable(x) {
     return new Readtable(x);
 }
 
+// make-dispatch-macro-character
+export function makeDispatchMacroCharacter(char, nonterminating = false, readtable = lispInstance.READTABLE) {
+    readtable.syntax[char] = new DispatchMacroCharacter(!nonterminating);
+}
+
 // This totally doesn't work yet.
-export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null, object = eofValue) {
+export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null) {
     let potentialNumber = true;
     let inEscape = false;
     let token = "";
@@ -92,8 +110,11 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
         // OM NOM NOM
         outer: for(;;) {
             let ch = readChar(inputStream, false, null, recursiveP);
-            if(ch === null)
-                break;
+            if(ch === null) {
+                if(inEscape)
+                    throw "Unterminated multiple escape";
+                break; // eof terminates this token.
+            }
             let res = syntaxType(ch);
             if(inEscape && res !== "multiple escape") {
                 token += ch.value;
@@ -120,9 +141,13 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                     token += caseConvert(ch.value);
                     continue;
                 default:
-                    if(res instanceof MacroChar && res.terminating)
+                    if(res instanceof MacroChar && res.terminating) {
                         unreadChar(ch, inputStream);
-                    break outer;
+                        break outer;
+                    } else {
+                        potentialNumber = false;
+                        token += ch.value;
+                    }
             }
         }
     }

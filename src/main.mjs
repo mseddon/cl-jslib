@@ -9,7 +9,7 @@ import * as sequences from "./sequences.mjs";
 import * as symbols from "./symbols.mjs";
 import * as strings from "./strings.mjs";
 
-import { setInstance, LispInstance } from "./lisp-instance.mjs"
+import { setInstance, LispInstance, lispInstance } from "./lisp-instance.mjs"
 
 function initializeInstance(inst) {
     setInstance(inst);
@@ -33,9 +33,15 @@ function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
 }
 
-    makeInstance();
+makeInstance();
 
-    let is = streams.makeStringInputStream("23247348723894734");
-    console.log(reader.read(is));
+let blorp = symbols.intern("BLORP", lispInstance.CL_PACKAGE);
+let FOO = new symbols.Package("FOO");
+symbols.usePackage("CL-USER", FOO)
+let bar = symbols.intern("BAR", FOO);
 
-    console.log(reader.readtableCase()+"")
+let is = streams.makeStringInputStream("23247348723894734");
+console.log(reader.read(is));
+console.log(reader.readtableCase()+"")
+
+console.log(blorp+"")

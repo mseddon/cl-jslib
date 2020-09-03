@@ -4,7 +4,7 @@
   "description": "A small Common Lisp library for JS hosted lisp environments.",
   "main": "index.js",
   "scripts": {
-    "start": "node src/main.mjs",
+    "start": "node --trace-uncaught src/main.mjs",
     "debug": "node --inspect src/main.mjs",
     "build": "npx rollup -c rollup.config.js"
   },

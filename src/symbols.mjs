@@ -27,8 +27,6 @@ export class Package {
     }
 }
 
-// This is dumb. Make this swappable later for multi environment.
-
 // export
 export function $export(symbols, pckage = lispInstance.PACKAGE) {
     if(!listp(symbols))
@@ -44,20 +42,29 @@ export function $export(symbols, pckage = lispInstance.PACKAGE) {
 
 // find-symbol
 export function findSymbol(string, pckage = lispInstance.PACKAGE) {
-    // TODO coerce to js string.
-    // TODO return 2nd return value :INTERNAL or :EXTERNAL
-
+    if(string instanceof Sym)
+        string = string.name; // symbol->string
+    
     let res = pckage.externalSymbols[string];
-    if(res)
-        return res; // :EXTERNAL
+    if(res) {
+        if(lispInstance.wantMV > 1)
+            lispInstance.values = [lispInstance.KEYWORD_PACKAGE.intern("EXTERNAL")];
+        return res;
+    }
 
     res = pckage.internalSymbols[string];
-    if(res)
-        return res; // :INTERNAL
+    if(res) {
+        if(lispInstance.wantMV > 1)
+            lispInstance.values = [lispInstance.KEYWORD_PACKAGE.intern("INTERNAL")];
+        return res;
+    }
 
     for(let x of pckage.useList)
-        if(x.externalSymbols[string])
+        if(x.externalSymbols[string]) {
+            if(lispInstance.wantMV > 1)
+                lispInstance.values = [lispInstance.KEYWORD_PACKAGE.intern("INHERIT")];
             return x.externalSymbols[string];
+        }
 }
 
 // find-package
@@ -222,6 +229,8 @@ export class Sym {
         if(this.pckage === lispInstance.PACKAGE)
             return this.name;
 
+        if(this.pckage && this.pckage.externalSymbols[this.name])
+            return this.pckage.name+":"+this.name;
         return this.pckage.name+"::"+this.name;
     }
 }
@@ -258,7 +267,7 @@ export let gensymCounter = 0;
 
 // gentemp
 export function gentemp(prefix = "T", pckage = lispInstance.PACKAGE) {
-    return new pckage.intern(prefix+(gensymCounter++));
+    return new intern(prefix+(gensymCounter++), pckage);
 }
 
 // symbol-function
