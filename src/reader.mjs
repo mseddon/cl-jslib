@@ -1,26 +1,28 @@
-import { readChar, peekChar, unreadChar } from "./streams.mjs"
+import { readChar, unreadChar } from "./streams.mjs"
 import { LispChar } from "./characters.mjs";
 import { digitCharP } from "./characters.mjs";
 import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
 import { digitChar } from "./characters.mjs";
+import { characterp } from "./characters.mjs";
+
 export class Readtable {
     case = "UPCASE";
 
     constructor(r = null) {
         if(r) {
-            this.coreSyntax = {...r.coreSyntax};
+            this.syntax = {...r.syntax};
             this.case = r.case;
         } else {
-            this.coreSyntax = {...coreSyntax};
+            this.syntax = {...standardSyntax};
         }
     }
 }
 
-/** This is the 'core syntax' table. */
-const coreSyntax = {};
+/** This is the 'standard syntax' table. */
+const standardSyntax = {};
 
-/** Add a range of characters to a syntax type */
+/** Add a range of characters to a standard syntax type */
 function charSyntaxRange(start, end, type) {
     start = start.charCodeAt(0);
     end = end.charCodeAt(0);
@@ -28,14 +30,14 @@ function charSyntaxRange(start, end, type) {
         [start, end] = [end, start];
 
         for(let i=start; i<=end; i++)
-            coreSyntax[String.fromCharCode(i)] = type;
+            standardSyntax[String.fromCharCode(i)] = type;
 }
 
+/** Set a range of characters to a standard syntax type */
 function charSyntaxSet(str, type) {
     for(let i=0; i<str.length; i++)
-        coreSyntax[str[i]] = type;
+        standardSyntax[str[i]] = type;
 }
-
 
 charSyntaxRange("0", "9", "constituent");
 charSyntaxRange("a", "z", "constituent");
@@ -49,9 +51,8 @@ charSyntaxSet("|", "multiple escape");
 function syntaxType(x) {
     if(x instanceof LispChar)
         x = x.value;
-    return coreSyntax[x] || "invalid";
+    return lispInstance.READTABLE.syntax[x] || "invalid";
 }
-
 
 export class MacroChar {
     constructor(terminating = false, fn) {
@@ -66,7 +67,6 @@ export function copyReadtable(x) {
         throw "Type error";
     return new Readtable(x);
 }
-
 
 // This totally doesn't work yet.
 export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null, object = eofValue) {
@@ -187,7 +187,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
             let num = parseInt(token, lispInstance.READ_BASE);
             if(!isNaN(num)) {
                 if(value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER)
-                    return Number(num); // fixnum
+                    return Number(num); // fixnum -- TODO: make a specific FixNum class...
                 return value;
             }
         
@@ -221,6 +221,43 @@ export function readtablep(x) {
 // get-dispatch-macro-character
 
 // set-macro-character
+export function setMacroCharacter(char, newFunction, nonTerminating = false, readtable = lispInstance.READTABLE) {
+    if(!characterp(char))
+        throw "char Type error";
+    if(!readtablep(readtable))
+        throw "readtable Type error";
+    if(newFunction === NIL) {
+        if(readtable.syntax[char.value] instanceof MacroChar)
+            delete readtable.syntax[char.value];
+    } else if(newFunction instanceof Function)
+        readtable.syntax[char.value] = new MacroChar(!nonTerminating, newFunction);
+    else
+        throw "new-function Type error";
+}
+
 // get-macro-character
+export function getMacroCharacter(char, readtable = lispInstance.READTABLE) {
+    if(!characterp(char))
+        throw "Type error, char not a character";
+    let f = readtable.syntax[char.value];
+    if(f instanceof MacroChar) {
+        lispInstance.values = lispInstance.wantMV > 1 ? [!f.terminating] : [];
+        return f.fn;
+    }
+    if(lispInstance.wantMV > 1)
+        lispInstance.values = [];
+    return null;
+}
 
 // set-syntax-from-char
+export function setSyntaxFromChar(toChar, fromChar, toReadtable = lispInstance.READTABLE, fromReadtable = lispInstance.READTABLE) {
+    if(!characterp(toChar))
+        throw "to-char Type error";
+    if(!characterp(fromChar))
+        throw "from-char Type error";
+    if(!readtablep(toReadtable))
+        throw "to-readtable Type error";
+    if(!readtablep(fromReadtable))
+        throw "from-readtable Type error";
+    toReadtable.syntax[toChar.value] = fromReadtable.syntax[fromChar.value];
+}
