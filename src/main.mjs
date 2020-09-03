@@ -33,13 +33,9 @@ function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
 }
 
-try {
     makeInstance();
 
     let is = streams.makeStringInputStream("fo|o-b|ar ");
     console.log(reader.read(is)+"");
 
     console.log(reader.readtableCase()+"")
-} catch(e) {
-    console.error(e);
-}

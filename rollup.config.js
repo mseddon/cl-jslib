@@ -9,7 +9,7 @@ export default {
     plugins: [terser({
       mangle: {
         toplevel: true,
-        properties: true
+        properties: "keep_quoted"
       }
     })]
 };

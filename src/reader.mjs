@@ -41,8 +41,8 @@ charSyntaxRange("A", "Z", "constituent");
 charSyntaxSet("!$%&*+-./:<=>?@[]^_{}~\x7F", "constituent");
 charSyntaxSet("\t\n\r\f\v ", "whitespace");
 
-coreSyntax["\\"] = "single escape";
-coreSyntax["|"] = "multiple escape";
+charSyntaxSet("\\", "single escape");
+charSyntaxSet("|", "multiple escape");
 
 function syntaxType(x) {
     if(x instanceof LispChar)
@@ -116,6 +116,8 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                     token += caseConvert(ch.value);
                     continue;
                 default:
+                    if(res instanceof MacroChar && res.terminating)
+                        unreadChar(ch, inputStream);
                     break outer;
             }
         }
@@ -129,6 +131,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
         let res = syntaxType(ch);
         switch(res) {
             case "invalid":
+                debugger
                 throw "Invalid character";
             case "whitespace":
                 continue outer;
