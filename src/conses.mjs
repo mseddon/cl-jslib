@@ -269,6 +269,7 @@ export function listLength(list) {
                     fast = cdr(fast);
                     slow = cdr(slow);
                     length += 2;
+                    continue;
                 } else if(nullp(fast))
                     return 1+length;
                 throw "Not a proper or circular list";
