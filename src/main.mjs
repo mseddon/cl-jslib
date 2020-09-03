@@ -35,7 +35,7 @@ function makeInstance() {
 
     makeInstance();
 
-    let is = streams.makeStringInputStream("fo|o-b|ar ");
-    console.log(reader.read(is)+"");
+    let is = streams.makeStringInputStream("23247348723894734");
+    console.log(reader.read(is));
 
     console.log(reader.readtableCase()+"")

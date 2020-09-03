@@ -3,12 +3,14 @@ import { LispChar } from "./characters.mjs";
 import { digitCharP } from "./characters.mjs";
 import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
+import { digitChar } from "./characters.mjs";
 export class Readtable {
     case = "UPCASE";
 
     constructor(r = null) {
         if(r) {
             this.coreSyntax = {...r.coreSyntax};
+            this.case = r.case;
         } else {
             this.coreSyntax = {...coreSyntax};
         }
@@ -25,8 +27,8 @@ function charSyntaxRange(start, end, type) {
     if(end < start)
         [start, end] = [end, start];
 
-        for(let i=start; i<end; i++)
-        coreSyntax[String.fromCharCode(i)] = type;
+        for(let i=start; i<=end; i++)
+            coreSyntax[String.fromCharCode(i)] = type;
 }
 
 function charSyntaxSet(str, type) {
@@ -89,7 +91,9 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
     function readToken() {
         // OM NOM NOM
         outer: for(;;) {
-            let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
+            let ch = readChar(inputStream, false, null, recursiveP);
+            if(ch === null)
+                break;
             let res = syntaxType(ch);
             if(inEscape && res !== "multiple escape") {
                 token += ch.value;
@@ -128,10 +132,11 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
 
         // read character x from inputStream.
         let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
+        if(ch === null)
+            break outer;
         let res = syntaxType(ch);
         switch(res) {
             case "invalid":
-                debugger
                 throw "Invalid character";
             case "whitespace":
                 continue outer;
@@ -163,9 +168,34 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
             }
         }
         if(potentialNumber) {
+            // parse bigint.
+            let sign = 1;
+            let value = 0n;
+
+            let i = 0;
+            if(token[i] === "-") {
+                sign = -sign;
+                i++;
+            }
+            for(; i<token.length; i++) {
+                value *= BigInt(lispInstance.READ_BASE);
+                let res = digitChar(new LispChar(token[i]), lispInstance.READ_BASE);
+
+                value += BigInt(res);
+            }
+
             let num = parseInt(token, lispInstance.READ_BASE);
+            if(!isNaN(num)) {
+                if(value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER)
+                    return Number(num); // fixnum
+                return value;
+            }
+        
+            num = parseFloat(token);
             if(!isNaN(num))
-                return Number(num);
+                return Number(num); // double-float
+
+            //   rational?
         }
         return intern(token);
     }
@@ -189,6 +219,8 @@ export function readtablep(x) {
 
 // set-dispatch-macro-character
 // get-dispatch-macro-character
+
 // set-macro-character
 // get-macro-character
+
 // set-syntax-from-char
