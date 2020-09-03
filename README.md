@@ -18,7 +18,7 @@ Invoke `npm run build` to generate a minified / mangled bundle into `dist\bundle
 
 ## Notes
 
-`main.mjs` specifically performs a `console.log(env)` in order to ensure nothing is tree-shaken, and that we definitely have included all the code.  If you comment out this line, you will find bundle sizes are extremely smaller, since you are now emitting only what is required.
+`main.mjs` specifically performs a `global["CL-JSLIB"] = env` in order to ensure nothing is tree-shaken, and that we definitely have included all the code.  If you comment out this line, you will find bundle sizes are extremely smaller, since you are now emitting only what is required.
 
 Currently no support for keyword arguments or multiple return values.  When these are included, these will not be fun to program in directly, but will allow idiomatic CL to be trivially compiled with decent performance.
 

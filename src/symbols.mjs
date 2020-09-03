@@ -198,7 +198,6 @@ export function packagep(x) {
     return x instanceof Package;
 }
 
-// *package*
 // package-error
 // package-error-package
 

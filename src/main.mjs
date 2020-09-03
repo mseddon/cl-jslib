@@ -17,7 +17,13 @@ function initializeInstance(inst) {
     inst.CL_PACKAGE = new symbols.Package("COMMON-LISP", ["CL"]);
     inst.CURRENT_PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
     symbols.usePackage(inst.CL_PACKAGE, inst.CURRENT_PACKAGE);
-    inst.KEYWORD_PACKAGE = new symbols.Package("KEYWORD", []);;    
+    inst.KEYWORD_PACKAGE = new symbols.Package("KEYWORD", []);
+
+    inst.READ_BASE = 10;
+    inst.READ_EVAL = true;
+    inst.READ_SUPPRESS = false;
+    inst.READTABLE = new reader.Readtable();
+
     return inst;
 }
 
@@ -30,7 +36,7 @@ function makeInstance() {
 
 makeInstance();
 
-globalThis["clJsLib"] = env;
+globalThis["CL-JSLIB"] = env;
 
 let CL = lispInstance.CL_PACKAGE;
 
