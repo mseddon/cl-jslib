@@ -35,8 +35,17 @@ export class LispString extends LispVector {
 }
 
 // simple-string-p
+
 // char
+export function char(str, index) {
+    if(!stringp(str))
+        throw "Type Error";
+    return sequences.elt(str, index);
+}
+
 // schar
+export const schar = char;
+
 // string
 
 // string-upcase
