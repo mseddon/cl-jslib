@@ -22,7 +22,7 @@ const nameChars = invertBijection(charNames);
 export class LispChar {
     constructor(ch) {
         if(chars[ch])
-            return chars[ch];
+            return chars[ch]; // don't actually allocate a new character, re-use the cached one.
         this.value = ch;
         this.charCode = ch.charCodeAt(0);
         chars[ch] = this;

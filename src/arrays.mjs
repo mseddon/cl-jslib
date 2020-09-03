@@ -52,7 +52,7 @@ export function arrayDimension(a, axis) {
     return a.dimensions[axis];
 }
 
-// array-demensions
+// array-dimensions
 export function arrayDimensions(a) {
     if(!arrayp(a))
         throw "Type Error";
@@ -119,8 +119,21 @@ export function fillPointer(array) {
 // array-total-size-limit
 
 // simple-vector-p
+
 // svref
+export function svref(vector, index) {
+    if(!vectorp(vector))
+        throw "Type Error";
+    if(index < 0 || index > vector._data.length)
+        throw "Vector index out of range";
+    return vector._data[index];
+}
+
 // vector
+export function vector(...objects) {
+    return new LispVector(objects.length, objects);
+}
+
 // vector-pop
 // vector-push
 // vector-push-extend
