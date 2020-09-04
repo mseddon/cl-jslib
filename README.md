@@ -1,10 +1,25 @@
 # CL-JSLIB
 
-A small Javascript runtime for the Common Lisp standard library.
+A small JavaScript runtime for the Common Lisp standard library.
 
 ## About
 
-`CL-JSLIB` is an experimental implementation of the Common Lisp standard library. It's purpose is to provide a small, native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 8k.
+`CL-JSLIB` is an implementation of the Common Lisp standard library.
+It's purpose is to provide a small, native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 8k.
+
+## Rationale
+
+A highly influential precursor to Common Lisp was MacLisp, from 1966 to well into the early 80s. Memory and cpu cycles at the time were not cheap, and so it was built in two layers. A small, fast assembly core,
+and a higher level compiler.
+
+Common Lisp is not a big language. By leveraging as much as possible from JavaScript, while maintaining absolute compatibility, the majority of the language can be implemented performantly, and idiomatically.
+
+`CL-JSLIB` aims to be the smallest, fastest, ANSI compliant Common Lisp runtime library in JavaScript. It is suitable for integration into interpreters and compilers. It's goal is to act as the backbone to some of the smallest Common Lisp
+systems in JavaScript, and inspiration for future, faster implementations.
+
+## Status
+
+`CL-JSLIB` is currently in alpha development. While there is support for a lot of the Common Lisp runtime, it is not yet ready for production. PRs welcome!.
 
 ## Quickstart
 
@@ -20,6 +35,8 @@ Invoke `npm run build` to generate a minified / mangled bundle into `dist\bundle
 
 `main.mjs` specifically performs a `global["CL-JSLIB"] = env` in order to ensure nothing is tree-shaken, and that we definitely have included all the code.  If you comment out this line, you will find bundle sizes are extremely smaller, since you are now emitting only what is required.
 
-Currently no support for keyword arguments or multiple return values.  When these are included, these will not be fun to program in directly, but will allow idiomatic CL to be trivially compiled with decent performance.
+Currently no support for keyword arguments.
 
-_This is not a compiler or interpreter_. There are no implementations of macros, etc here. The purpose of this library is to provide a small, fast, common lisp runtime for use with external compilers and interpreters.
+At any given time in a JavaScript isolate (using Dart's terminology), the value of `lispInstance` in `lisp-instance.mjs` is bound to a running Lisp thread.
+
+When calling a function, if `lispInstance.wantMV` is not 1, then any function returning multiple values will return the first value normally, and extra values in `lispInstance.values`. This lets implementations of `multiple-value-bind` find the extra values.
