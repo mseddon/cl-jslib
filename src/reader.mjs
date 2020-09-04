@@ -59,6 +59,9 @@ export class DispatchMacro extends MacroChar {
                 else
                     break;
             }
+            if(syntaxType(ch.value) === "whitespace")
+                throw "Syntax Error";
+            
             if(this.dispatchMacros[ch.value])
                 return this.dispatchMacros[ch.value](inputStream, ch, num);
             throw dispChar.value+ch.value+" is not a dispatch macro.";
@@ -375,6 +378,11 @@ function skipWhitespace(inputStream) {
     }
 }
 
+const syntaxErrorMacro = (inputStream, c) => {
+    throw c.value+" is not valid syntax";
+}
+
+
 setMacroCharacter('(', (inputStream, char) => {
     if(characterp(char))
         char = char.value;
@@ -408,9 +416,7 @@ setMacroCharacter('(', (inputStream, char) => {
     }
 }, false, standardReadtable);
 
-setMacroCharacter(')', (is, ch) => {
-    throw "Unexpected )"
-}, false, standardReadtable);
+setMacroCharacter(')', syntaxErrorMacro, false, standardReadtable);
 
 setMacroCharacter("'", (inputStream, ch) => {
     return list(lispInstance.CL_PACKAGE.QUOTE, read(inputStream, true, null, true));
@@ -511,6 +517,10 @@ setDispatchMacroCharacter("#", "R", (inputStream, c, n) => {
 // #+
 // #-
 
+const syntaxErrorDispatchMacro = (inputStream, c, n) => {
+    throw "#"+c.value+" is not valid syntax";
+}
+
 // #|
 setDispatchMacroCharacter("#", "|", (inputStream, c, n) => {
     for(;;) {
@@ -523,10 +533,10 @@ setDispatchMacroCharacter("#", "|", (inputStream, c, n) => {
     }
 }, standardReadtable)
 
-// #<
-setDispatchMacroCharacter("#", "<", (inputStream, c, n) => {
-    throw "Syntax Error";
-}, standardReadtable)
+setDispatchMacroCharacter("#", ")",  syntaxErrorDispatchMacro, standardReadtable)
 
-// # <whitespace>
+// #<
+setDispatchMacroCharacter("#", "<",  syntaxErrorDispatchMacro, standardReadtable)
+
 // #)
+setDispatchMacroCharacter("#", ")",  syntaxErrorDispatchMacro, standardReadtable)
