@@ -5,16 +5,16 @@ A small JavaScript runtime for the Common Lisp standard library.
 ## About
 
 `CL-JSLIB` is an implementation of the Common Lisp standard library.
-It's purpose is to provide a small, native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 8k.
+It's purpose is to provide a small, fast, standard compliant native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 8k.
 
 ## Rationale
 
 A highly influential precursor to Common Lisp was MacLisp, from 1966 to well into the early 80s. Memory and cpu cycles at the time were not cheap, and so it was built in two layers. A small, fast assembly core,
 and a higher level compiler.
 
-Common Lisp is not a big language. By leveraging as much as possible from JavaScript, while maintaining absolute compatibility, the majority of the language can be implemented performantly, and idiomatically.
+Common Lisp, though subtle, is not a big language by today's standards. By leveraging as much as possible from JavaScript, while maintaining absolute compatibility, the majority of the language can be implemented performantly, and idiomatically.
 
-`CL-JSLIB` aims to be the smallest, fastest, ANSI compliant Common Lisp runtime library in JavaScript. It is suitable for integration into interpreters and compilers. It's goal is to act as the backbone to some of the smallest Common Lisp
+`CL-JSLIB` aims to be the smallest, fastest, (nonblocking) ANSI compliant Common Lisp runtime library in JavaScript. It is suitable for integration into interpreters and compilers. It's goal is to act as the backbone to some of the smallest Common Lisp
 systems in JavaScript, and inspiration for future, faster implementations.
 
 ## Status
