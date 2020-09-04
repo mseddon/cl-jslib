@@ -288,6 +288,17 @@ export function setDispatchMacroCharacter(dispChar, subChar, newFunction, readta
 }
 
 // get-dispatch-macro-character
+export function getDispatchMacroCharacter(dispChar, subChar, readtable = lispInstance.READTABLE) {
+    if(characterp(dispChar))
+        dispChar = dispChar.value;
+    if(characterp(subChar))
+        subChar = subChar.value;
+
+    let out = readtable.syntax[dispChar];
+    if(!(out instanceof DispatchMacro))
+        throw dispChar.value+" is not a dispatch macro";
+    return out.dispatchMacros[subChar]
+}
 
 // set-macro-character
 export function setMacroCharacter(char, newFunction, nonTerminating = false, readtable = lispInstance.READTABLE) {
@@ -496,9 +507,26 @@ setDispatchMacroCharacter("#", "R", (inputStream, c, n) => {
 // #P
 // #=
 // ##
+
 // #+
 // #-
+
 // #|
+setDispatchMacroCharacter("#", "|", (inputStream, c, n) => {
+    for(;;) {
+        let ch = readChar(inputStream, true);
+        if(ch.value == '|') {
+            ch = readChar(inputStream, true);
+            if(ch.value == '#')
+                return;
+        }
+    }
+}, standardReadtable)
+
 // #<
+setDispatchMacroCharacter("#", "<", (inputStream, c, n) => {
+    throw "Syntax Error";
+}, standardReadtable)
+
 // # <whitespace>
 // #)
