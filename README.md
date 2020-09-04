@@ -1,4 +1,5 @@
 # CL-JSLIB
+![npm version](https://badge.fury.io/js/https%3A%2F%2Fgithub.com%2Fmseddon%2Fcl-jslib.svg)
 
 A small JavaScript runtime for the Common Lisp standard library.
 
