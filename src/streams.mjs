@@ -40,7 +40,6 @@ export class StringInputStream extends Stream {
     }
 
     [PEEK_CHAR](eofErrorP = true, eofValue = NIL, recursiveP = false) {
-        let oldPosition = this._position;
         if(this._position === this._input.length) {
             if(eofErrorP)
                 throw "End of file";

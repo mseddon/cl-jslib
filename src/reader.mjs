@@ -101,143 +101,151 @@ export function makeDispatchMacroCharacter(char, nonterminating = false, readtab
 
 // This totally doesn't work yet.
 export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP = null) {
-    let potentialNumber = true;
-    let inEscape = false;
-    let token = "";
-    function caseConvert(ch) {
-        switch(lispInstance.READTABLE.case) {
-            case "UPCASE":
-                return ch.toUpperCase();
-            case "DOWNCASE":
-                return ch.toLowerCase();
-            case "INVERT":
-                if(ch.toLowerCase() == ch && ch.toUpperCase() != ch)
+    let oldLabels = lispInstance._READER_LABELS
+    if(!recursiveP)
+        lispInstance._READER_LABELS = {}
+        
+    try {
+        let potentialNumber = true;
+        let inEscape = false;
+        let token = "";
+        function caseConvert(ch) {
+            switch(lispInstance.READTABLE.case) {
+                case "UPCASE":
                     return ch.toUpperCase();
-                if(ch.toUppwerCase() == ch && ch.toLowerCase() != ch)
+                case "DOWNCASE":
                     return ch.toLowerCase();
+                case "INVERT":
+                    if(ch.toLowerCase() == ch && ch.toUpperCase() != ch)
+                        return ch.toUpperCase();
+                    if(ch.toUppwerCase() == ch && ch.toLowerCase() != ch)
+                        return ch.toLowerCase();
+            }
+            return ch;
         }
-        return ch;
-    }
 
-    function readToken() {
+        function readToken() {
+            outer: for(;;) {
+                let ch = readChar(inputStream, false, null, recursiveP);
+                if(ch === null) {
+                    if(inEscape)
+                        throw "Unterminated multiple escape";
+                    break; // eof terminates this token.
+                }
+                let res = syntaxType(ch);
+                if(inEscape && res !== "multiple escape") {
+                    token += ch.value;
+                    continue;
+                }
+
+                switch(res) {
+                    case "invalid":
+                        throw "Invalid character";
+                    case "whitespace":
+                        return;
+                    case "single escape":
+                        potentialNumber = false;
+                        ch = readChar(inputStream, true, eofValue, recursiveP);
+                        token += ch.value;
+                        continue;
+                    case "multiple escape":
+                        potentialNumber = false;
+                        inEscape = !inEscape;
+                        continue;
+                    case "constituent":
+                        if(potentialNumber)
+                            potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
+                        token += caseConvert(ch.value);
+                        continue;
+                    default:
+                        if(res instanceof MacroChar && !res.nonterminating) {
+                            unreadChar(ch, inputStream);
+                            break outer;
+                        } else {
+                            potentialNumber = false;
+                            token += ch.value;
+                        }
+                }
+            }
+        }
+
         outer: for(;;) {
-            let ch = readChar(inputStream, false, null, recursiveP);
-            if(ch === null) {
-                if(inEscape)
-                    throw "Unterminated multiple escape";
-                break; // eof terminates this token.
-            }
-            let res = syntaxType(ch);
-            if(inEscape && res !== "multiple escape") {
-                token += ch.value;
-                continue;
-            }
+            // if inputStream EOF, bail eofy
 
+            // read character x from inputStream.
+            let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
+            if(ch === null)
+                break outer;
+            let res = syntaxType(ch);
             switch(res) {
                 case "invalid":
                     throw "Invalid character";
                 case "whitespace":
-                    return;
+                    continue outer;
                 case "single escape":
                     potentialNumber = false;
                     ch = readChar(inputStream, true, eofValue, recursiveP);
                     token += ch.value;
-                    continue;
+                    readToken();
+                    break;
                 case "multiple escape":
                     potentialNumber = false;
-                    inEscape = !inEscape;
-                    continue;
+                    inEscape = true;
+                    readToken();
+                    break;
                 case "constituent":
-                    if(potentialNumber)
-                        potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
                     token += caseConvert(ch.value);
-                    continue;
-                default:
-                    if(res instanceof MacroChar && !res.nonterminating) {
-                        unreadChar(ch, inputStream);
-                        break outer;
-                    } else {
-                        potentialNumber = false;
-                        token += ch.value;
+                    if(ch.value !== '-')
+                        potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
+                    readToken();
+                    break;
+                default: {
+                    if(res instanceof MacroChar) {
+                        res = res.fn(inputStream, ch);
+                        if(res === undefined) // function returned zero values. re-enter
+                            continue outer;
+                        return res // function returned a single result (hopefully ;) - return it.
                     }
-            }
-        }
-    }
-
-    outer: for(;;) {
-        // if inputStream EOF, bail eofy
-
-        // read character x from inputStream.
-        let ch = readChar(inputStream, eofErrorP, eofValue, recursiveP);
-        if(ch === null)
-            break outer;
-        let res = syntaxType(ch);
-        switch(res) {
-            case "invalid":
-                throw "Invalid character";
-            case "whitespace":
-                continue outer;
-            case "single escape":
-                potentialNumber = false;
-                ch = readChar(inputStream, true, eofValue, recursiveP);
-                token += ch.value;
-                readToken();
-                break;
-            case "multiple escape":
-                potentialNumber = false;
-                inEscape = true;
-                readToken();
-                break;
-            case "constituent":
-                token += caseConvert(ch.value);
-                if(ch.value !== '-')
-                    potentialNumber = digitCharP(ch, lispInstance.READ_BASE);
-                readToken();
-                break;
-            default: {
-                if(res instanceof MacroChar) {
-                    res = res.fn(inputStream, ch);
-                    if(res === undefined) // function returned zero values. re-enter
-                        continue outer;
-                    return res // function returned a single result (hopefully ;) - return it.
+                    throw "DERP";
                 }
-                throw "DERP";
             }
+            
+            if(potentialNumber) {
+                // parse bigint.
+                let sign = 1;
+                let value = 0n;
+
+                let i = 0;
+                if(token[i] === "-") {
+                    sign = -sign;
+                    i++;
+                }
+                for(; i<token.length; i++) {
+                    value *= BigInt(lispInstance.READ_BASE);
+                    let res = digitChar(new LispChar(token[i]), lispInstance.READ_BASE);
+
+                    value += BigInt(res);
+                }
+
+                let num = parseInt(token, lispInstance.READ_BASE);
+                if(!isNaN(num)) {
+                    if(value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER)
+                        return Number(num); // fixnum -- TODO: make a specific FixNum class...
+                    return value;
+                }
+            
+                num = parseFloat(token);
+                if(!isNaN(num))
+                    return Number(num); // double-float
+
+                //   rational?
+            }
+            if(token === ".")
+                throw ". may not appear outside of a list";
+            return intern(token);
         }
-        
-        if(potentialNumber) {
-            // parse bigint.
-            let sign = 1;
-            let value = 0n;
-
-            let i = 0;
-            if(token[i] === "-") {
-                sign = -sign;
-                i++;
-            }
-            for(; i<token.length; i++) {
-                value *= BigInt(lispInstance.READ_BASE);
-                let res = digitChar(new LispChar(token[i]), lispInstance.READ_BASE);
-
-                value += BigInt(res);
-            }
-
-            let num = parseInt(token, lispInstance.READ_BASE);
-            if(!isNaN(num)) {
-                if(value >= Number.MIN_SAFE_INTEGER && value <= Number.MAX_SAFE_INTEGER)
-                    return Number(num); // fixnum -- TODO: make a specific FixNum class...
-                return value;
-            }
-        
-            num = parseFloat(token);
-            if(!isNaN(num))
-                return Number(num); // double-float
-
-            //   rational?
-        }
-        if(token === ".")
-            throw ". may not appear outside of a list";
-        return intern(token);
+    } finally {
+        lispInstance._READER_LABELS = oldLabels;
     }
 }
 
@@ -566,7 +574,18 @@ setDispatchMacroCharacter("#", "A", (inputStream, c, n) => {
 // #P
 
 // #=
+setDispatchMacroCharacter("#", "=", (s, c, n) => {
+    if(lispInstance._READER_LABELS.hasOwnProperty(n))
+        throw "Label #="+n+" already defined";
+    return lispInstance._READER_LABELS[n] = read(s, true, null, true);
+}, standardReadtable)
+
 // ##
+setDispatchMacroCharacter("#", "#", (s, c, n) => {
+    if(!lispInstance._READER_LABELS.hasOwnProperty(n))
+        throw "Label #="+n+" not defined";
+    return lispInstance._READER_LABELS[n];
+}, standardReadtable)
 
 // #+
 // #-
@@ -586,8 +605,6 @@ setDispatchMacroCharacter("#", "|", (inputStream, c, n) => {
         }
     }
 }, standardReadtable)
-
-setDispatchMacroCharacter("#", ")",  syntaxErrorDispatchMacro, standardReadtable)
 
 // #<
 setDispatchMacroCharacter("#", "<",  syntaxErrorDispatchMacro, standardReadtable)
