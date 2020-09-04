@@ -743,3 +743,14 @@ Cons.prototype[sequences.REVERSE] = Nil.prototype[sequences.REVERSE] = x => {
     }
     throw "Type error";
 }
+
+export function listToJSArray(lst) {
+    let out = [];
+    while(consp(lst)) {
+        out.push(car(lst));
+        lst = cdr(lst);
+    }
+    if(!nullp(lst))
+        throw "Not a proper list";
+    return out;
+}

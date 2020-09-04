@@ -3,8 +3,9 @@ import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
 import { LispString } from "./strings.mjs";
 import { LispChar, digitChar, characterp, digitCharP, nameChar } from "./characters.mjs";
-import { NIL, list, cons, cdr } from "./conses.mjs"
+import { NIL, list, cons, cdr, listToJSArray } from "./conses.mjs"
 import { peekChar } from "./streams.mjs";
+import { vector } from "./arrays.mjs"
 
 export class Readtable {
     constructor(r = null) {
@@ -146,7 +147,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                     token += caseConvert(ch.value);
                     continue;
                 default:
-                    if(res instanceof MacroChar && res.terminating) {
+                    if(res instanceof MacroChar && !res.nonterminating) {
                         unreadChar(ch, inputStream);
                         break outer;
                     } else {
@@ -445,6 +446,11 @@ setDispatchMacroCharacter("#", "'", (inputStream, c, n) => {
 }, standardReadtable)
 
 // #(
+setDispatchMacroCharacter("#", "(", (inputStream, c, n) => {
+   let lst = readDelimitedList(")", inputStream, true);
+   return vector.apply(null, listToJSArray(lst));
+}, standardReadtable);
+    
 // #*
 // #.
 
