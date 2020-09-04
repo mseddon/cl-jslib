@@ -1,6 +1,4 @@
 # CL-JSLIB
-![npm version](https://badge.fury.io/js/https%3A%2F%2Fgithub.com%2Fmseddon%2Fcl-jslib.svg)
-
 A small JavaScript runtime for the Common Lisp standard library.
 
 ## About
@@ -40,4 +38,4 @@ Currently no support for keyword arguments.
 
 At any given time in a JavaScript isolate (using Dart's terminology), the value of `lispInstance` in `lisp-instance.mjs` is bound to a running Lisp thread.
 
-When calling a function, if `lispInstance.wantMV` is not 1, then any function returning multiple values will return the first value normally, and extra values in `lispInstance.values`. This lets implementations of `multiple-value-bind` find the extra values.
+When calling a function, if `lispInstance.wantMV` is not 1, then any function returning multiple values will return the first value normally, and extra values in `lispInstance.values`. This lets implementations of `multiple-value-bind` find the extra values, while trivial cases do not need to allocate.
