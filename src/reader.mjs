@@ -426,7 +426,19 @@ setMacroCharacter('"', (inputStream, ch) => {
 }, false, standardReadtable)
 
 // `
+setMacroCharacter("`", (inputStream, ch) => {
+    return list(lispInstance.CL_PACKAGE.BACKQUOTE, read(inputStream, true, null, true));
+}, false, standardReadtable)
+
 // ,
+setMacroCharacter(",", (inputStream, ch) => {
+    ch = readChar(inputStream, false);
+    if(ch && ch.value === "@")
+        return list(lispInstance.CL_PACKAGE.UNQUOTE_SPLICING, read(inputStream, true, null, true));
+    unreadChar(ch, inputStream);
+    return list(lispInstance.CL_PACKAGE.UNQUOTE, read(inputStream, true, null, true));
+}, false, standardReadtable)
+
 
 // #
 makeDispatchMacroCharacter("#", false, standardReadtable);

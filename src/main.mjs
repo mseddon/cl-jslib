@@ -19,6 +19,10 @@ function initializeInstance(inst) {
     inst.CL_PACKAGE.QUOTE = symbols.intern("QUOTE", inst.CL_PACKAGE);
     inst.CL_PACKAGE.FUNCTION = symbols.intern("FUNCTION", inst.CL_PACKAGE);
 
+    inst.CL_PACKAGE.BACKQUOTE = symbols.intern("BACKQUOTE", inst.CL_PACKAGE);
+    inst.CL_PACKAGE.UNQUOTE = symbols.intern("UNQUOTE", inst.CL_PACKAGE);
+    inst.CL_PACKAGE.UNQUOTE_SPLICING = symbols.intern("UNQUOTE-SPLICING", inst.CL_PACKAGE);
+
     symbols.$export(conses.list(inst.CL_PACKAGE.QUOTE, inst.CL_PACKAGE.FUNCTION), inst.CL_PACKAGE)
 
     inst.PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
@@ -46,5 +50,5 @@ let FOO = new symbols.Package("FOO");
 symbols.usePackage("CL-USER", FOO)
 let bar = symbols.intern("BAR", FOO);
 
-let is = streams.makeStringInputStream(`#(1 2 3 4)`);
+let is = streams.makeStringInputStream(`\`#(1 ,@2 3 4)`);
 console.log(reader.read(is)+"");
