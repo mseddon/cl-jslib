@@ -22,7 +22,7 @@ export class LispArray {
                 return;
             }
             out += "(";
-            const sz = this.dimensions.length;
+            const sz = this.dimensions[n];
             for(let i=0; i<sz; i++) {
                 arrayToString(n+1);
                 if(i + 1 < sz)

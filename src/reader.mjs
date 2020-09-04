@@ -518,6 +518,12 @@ setDispatchMacroCharacter("#", "R", (inputStream, c, n) => {
 
 // #A
 setDispatchMacroCharacter("#", "A", (inputStream, c, n) => {
+    if(n === 1) {
+        if(readChar(inputStream, true).value != "(")
+            throw "( expected";
+        return vector.apply(null, listToJSArray(readDelimitedList(")", inputStream, true)));
+    }
+        
     function flattenToJSArray(dimensions, initial, accum = []) {
         if(nullp(dimensions)) {
             accum.push(initial);
