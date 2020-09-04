@@ -418,12 +418,16 @@ setMacroCharacter('(', (inputStream, char) => {
     }
 }, false, standardReadtable);
 
+
+// )
 setMacroCharacter(')', syntaxErrorMacro, false, standardReadtable);
 
+// '
 setMacroCharacter("'", (inputStream, ch) => {
     return list(lispInstance.CL_PACKAGE.QUOTE, read(inputStream, true, null, true));
 }, false, standardReadtable)
 
+// ;
 setMacroCharacter(";", (inputStream, ch) => {
     for(;;) {
         let ch = readChar(inputStream, false, null);
@@ -432,6 +436,7 @@ setMacroCharacter(";", (inputStream, ch) => {
     }
 }, false, standardReadtable)
 
+// "
 setMacroCharacter('"', (inputStream, ch) => {
     let string = "";
     for(;;) {

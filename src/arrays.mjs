@@ -13,22 +13,27 @@ export class LispArray {
     }
 
     toString() {
-        return arrayToString(this);
-    }
-}
+        let index = 0;
+        let out = "";
 
-function arrayToString(array, n) {
-    let out = "#"+array.dimensions.length+"A";
-    let sentinel = list(NIL);
-    out += "(";
-    let sz = arrayTotalSize(array);
-    for(let i=0; i<sz; i++) {
-        out += array._data[array.displacement+i];
-        if(i + 1 < sz)
-            out += " ";
+        const arrayToString = n => {
+            if(n >= this.dimensions.length) {
+                out += this._data[this.displacement+index++];
+                return;
+            }
+            out += "(";
+            const sz = this.dimensions.length;
+            for(let i=0; i<sz; i++) {
+                arrayToString(n+1);
+                if(i + 1 < sz)
+                    out += " ";
+            }
+            out += ")";
+            return out;
+        }
+        
+        return "#"+this.dimensions.length+"A"+arrayToString(0);
     }
-    out += ")";
-    return out;
 }
 
 export class LispVector extends LispArray {
