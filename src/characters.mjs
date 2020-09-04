@@ -12,14 +12,14 @@ const charNames = {
     "\x7f": "Rubout",
 }
 
-function invertBijection(x) {
+function invertCharNames() {
     let out = {};
-    for(let key in x)
-        out[x[key]] = key;
+    for(let key in charNames)
+        out[charNames[key].toUpperCase()] = key;
     return out;
 }
 
-const nameChars = invertBijection(charNames);
+const nameChars = invertCharNames();
 
 export class LispChar {
     constructor(ch) {
@@ -363,7 +363,8 @@ export function charName(ch) {
 export function nameChar(name) {
     if(typeof name !== "string")
         throw "Type Error"
-    if(nameChars[name])
-        return nameChars[name];
+    let n = name.toUpperCase()
+    if(nameChars[n])
+        return nameChars[n];
     throw "Not a valid character name: "+name;
 }

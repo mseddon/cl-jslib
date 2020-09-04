@@ -47,6 +47,5 @@ symbols.usePackage("CL-USER", FOO)
 let bar = symbols.intern("BAR", FOO);
 
 let is = streams.makeStringInputStream(`
-#16RFF
 `);
 console.log(reader.read(is)+"");

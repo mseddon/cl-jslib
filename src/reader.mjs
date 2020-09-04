@@ -2,7 +2,7 @@ import { readChar, unreadChar } from "./streams.mjs"
 import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
 import { LispString } from "./strings.mjs";
-import { LispChar, digitChar, characterp, digitCharP } from "./characters.mjs";
+import { LispChar, digitChar, characterp, digitCharP, nameChar } from "./characters.mjs";
 import { NIL, list, cons, cdr } from "./conses.mjs"
 import { peekChar } from "./streams.mjs";
 
@@ -89,7 +89,7 @@ export function copyReadtable(x) {
 
 // make-dispatch-macro-character
 export function makeDispatchMacroCharacter(char, nonterminating = false, readtable = lispInstance.READTABLE) {
-    readtable.syntax[char] = new DispatchMacro(!nonterminating);
+    readtable.syntax[char] = new DispatchMacro(nonterminating);
 }
 
 // This totally doesn't work yet.
@@ -300,7 +300,7 @@ export function setMacroCharacter(char, newFunction, nonTerminating = false, rea
         if(readtable.syntax[char.value] instanceof MacroChar)
             delete readtable.syntax[char.value];
     } else if(newFunction instanceof Function)
-        readtable.syntax[char.value] = new MacroChar(!nonTerminating, newFunction);
+        readtable.syntax[char.value] = new MacroChar(nonTerminating, newFunction);
     else
         throw "new-function Type error";
 }
@@ -431,6 +431,13 @@ setMacroCharacter('"', (inputStream, ch) => {
 makeDispatchMacroCharacter("#", false, standardReadtable);
 
 // #\
+setDispatchMacroCharacter("#", "\\", (inputStream, c, n) => {
+    let tk = readToEndOfToken(inputStream);
+    
+    if(tk.length == 1)
+        return new LispChar(tk);
+    return nameChar(tk);
+}, standardReadtable)
 
 // #'
 setDispatchMacroCharacter("#", "'", (inputStream, c, n) => {
