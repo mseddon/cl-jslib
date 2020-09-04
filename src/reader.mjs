@@ -3,9 +3,10 @@ import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
 import { LispString } from "./strings.mjs";
 import { LispChar, digitChar, characterp, digitCharP, nameChar } from "./characters.mjs";
-import { NIL, list, cons, cdr, listToJSArray } from "./conses.mjs"
+import { NIL, list, consp, cons, car, cdr, listLength, listToJSArray } from "./conses.mjs"
 import { peekChar } from "./streams.mjs";
-import { vector } from "./arrays.mjs"
+import { vector, LispArray } from "./arrays.mjs"
+import { nullp } from "./conses.mjs";
 
 export class Readtable {
     constructor(r = null) {
@@ -29,7 +30,7 @@ function charSyntaxRange(start, end, type) {
     if(end < start)
         [start, end] = [end, start];
 
-        for(let i=start; i<=end; i++)
+    for(let i=start; i<=end; i++)
         standardReadtable.syntax[String.fromCharCode(i)] = type;
 }
 
@@ -54,17 +55,19 @@ export class DispatchMacro extends MacroChar {
             let ch;
             for(;;) {
                 ch = readChar(inputStream, true);
-                if(digitCharP(ch))
-                    num = num*10 + digitChar(ch);
+                if(digitCharP(ch, lispInstance.READ_BASE))
+                    num = num*10 + digitChar(ch, lispInstance.READ_BASE);
                 else
                     break;
             }
             if(syntaxType(ch.value) === "whitespace")
                 throw "Syntax Error";
             
-            if(this.dispatchMacros[ch.value])
-                return this.dispatchMacros[ch.value](inputStream, ch, num);
-            throw dispChar.value+ch.value+" is not a dispatch macro.";
+            let uch = ch.value.toUpperCase()
+
+            if(this.dispatchMacros[uch])
+                return this.dispatchMacros[uch](inputStream, ch, num);
+            throw dispChar.value+uch+" is not a dispatch macro.";
         })
     }
 }
@@ -287,7 +290,7 @@ export function setDispatchMacroCharacter(dispChar, subChar, newFunction, readta
     let out = readtable.syntax[dispChar];
     if(!(out instanceof DispatchMacro))
         throw dispChar.value+" is not a dispatch macro";
-    out.dispatchMacros[subChar] = newFunction;
+    out.dispatchMacros[subChar.toUpperCase()] = newFunction;
 }
 
 // get-dispatch-macro-character
@@ -300,7 +303,7 @@ export function getDispatchMacroCharacter(dispChar, subChar, readtable = lispIns
     let out = readtable.syntax[dispChar];
     if(!(out instanceof DispatchMacro))
         throw dispChar.value+" is not a dispatch macro";
-    return out.dispatchMacros[subChar]
+    return out.dispatchMacros[subChar.toUpperCase()]
 }
 
 // set-macro-character
@@ -381,7 +384,6 @@ function skipWhitespace(inputStream) {
 const syntaxErrorMacro = (inputStream, c) => {
     throw c.value+" is not valid syntax";
 }
-
 
 setMacroCharacter('(', (inputStream, char) => {
     if(characterp(char))
@@ -478,7 +480,7 @@ setDispatchMacroCharacter("#", "'", (inputStream, c, n) => {
 setDispatchMacroCharacter("#", "(", (inputStream, c, n) => {
    let lst = readDelimitedList(")", inputStream, true);
    return vector.apply(null, listToJSArray(lst));
-}, standardReadtable);
+}, standardReadtable)
     
 // #*
 // #.
@@ -508,9 +510,50 @@ setDispatchMacroCharacter("#", "R", (inputStream, c, n) => {
 }, standardReadtable)
 
 // #C
+
 // #A
+setDispatchMacroCharacter("#", "A", (inputStream, c, n) => {
+    function flattenToJSArray(dimensions, initial, accum = []) {
+        if(nullp(dimensions)) {
+            accum.push(initial);
+            return accum;
+        }
+
+        let dimension = car(dimensions);
+        for(let i=0; i<dimension; i++) {
+            if(!consp(initial))
+                throw "Not enough elements in array";
+            flattenToJSArray(cdr(dimensions), car(initial), accum);
+            initial = cdr(initial);
+        }
+        if(!nullp(initial))
+            throw "Too many elements in array";
+        return accum;
+    }
+
+
+    let arrayLit = read(inputStream, true, null, true);
+
+    let pointer = arrayLit;
+
+    let dimensions = list(NIL);
+    let lastDimensions = dimensions;
+
+    for(let d=0; d<n; d++) {
+        if(!consp(pointer))
+            throw "( expected"
+        lastDimensions = lastDimensions.cdr = cons(listLength(pointer), NIL);
+        
+        pointer = car(pointer);
+    }
+
+    dimensions = dimensions.cdr;
+    return new LispArray(listToJSArray(dimensions), flattenToJSArray(dimensions, arrayLit));
+}, standardReadtable)
+
 // #S
 // #P
+
 // #=
 // ##
 

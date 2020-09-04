@@ -273,14 +273,14 @@ export function digitChar(x, radix = 10) {
     if(x.value >= '0' && x.value <= '9')
         return x.value.charCodeAt(0) - '0'.charCodeAt(0)
     let ch = x.value.toUpperCase().charCodeAt(0) - "A".charCodeAt(0) + 10;
-    if(ch >= 10 && ch <= lispInstance.READ_BASE)
+    if(ch < radix)
         return ch;
     return false;
 }
 
 // digit-char-p
 export function digitCharP(x, radix = 10) { // TODO: Base
-    return !!digitChar(x, radix);
+    return digitChar(x, radix) !== false;
 }
 
 // graphic-char-p

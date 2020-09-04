@@ -1,5 +1,5 @@
 import { ELT, LENGTH } from "./sequences.mjs"
-import { list } from "./conses.mjs"
+import { list, NIL, cons, cdr } from "./conses.mjs"
 
 export class LispArray {
     constructor(dimensions, initial = []) {
@@ -11,6 +11,24 @@ export class LispArray {
         initial.length = this.dimensions.reduce((x, y) => x * y);
         this._data = initial;
     }
+
+    toString() {
+        return arrayToString(this);
+    }
+}
+
+function arrayToString(array, n) {
+    let out = "#"+array.dimensions.length+"A";
+    let sentinel = list(NIL);
+    out += "(";
+    let sz = arrayTotalSize(array);
+    for(let i=0; i<sz; i++) {
+        out += array._data[array.displacement+i];
+        if(i + 1 < sz)
+            out += " ";
+    }
+    out += ")";
+    return out;
 }
 
 export class LispVector extends LispArray {

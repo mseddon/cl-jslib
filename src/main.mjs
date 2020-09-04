@@ -50,6 +50,5 @@ let FOO = new symbols.Package("FOO");
 symbols.usePackage("CL-USER", FOO)
 let bar = symbols.intern("BAR", FOO);
 
-let is = streams.makeStringInputStream(`#| hello
-| |# world`);
+let is = streams.makeStringInputStream(`#2a((1 2) (3 4))`);
 console.log(reader.read(is)+"");
