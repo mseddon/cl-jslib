@@ -1,5 +1,5 @@
 import { ELT, LENGTH } from "./sequences.mjs"
-import { list, NIL, cons, cdr } from "./conses.mjs"
+import { list } from "./conses.mjs"
 
 export class LispArray {
     constructor(dimensions, initial = []) {
@@ -127,7 +127,7 @@ export function arrayInBoundsP(array, ...subscripts) {
     if(array.dimensions.length !== subscripts.length)
         return false;
     for(let i=0; i<subscripts.length; i++) {
-        if(subscripts[i] >= array.dimensions[i])
+        if(subscripts[i] < 0 || subscripts[i] >= array.dimensions[i])
             return false;
     }
     return true;
@@ -162,6 +162,12 @@ export function fillPointer(array) {
 }
 
 // row-major-aref
+export function rowMajorAref(array, index) {
+    if(!arrayp(array))
+        throw "Type error";
+    return array._data[array.displacement + index];
+}
+
 // upgraded-array-element-type
 
 // array-dimension-limit
@@ -206,6 +212,16 @@ export function vectorPush(vector, value) {
 }
 
 // vector-push-extend
+export function vectorPushExtend(vector, value) {
+    // TODO: &optional extension
+    const extension = 100;
+    
+    if(!arrayHasFillPointer(vector))
+        throw "Vector does not have fill pointer";
+    if(vector.fillPointer >= vector._data.length)
+        vector._data.length += extension
+    vector._data[vector.fillPointer++] = value;
+}
 
 // vectorp
 export function vectorp(array) {
