@@ -21,14 +21,14 @@ export class StringInputStream extends Stream {
         this._position = 0;
     }
 
-    peeked = null;
+    unread = null;
 
     [INPUT_STREAM] = this;
 
     [READ_CHAR](eofErrorP = true, eofValue = NIL, recursiveP = false) {
-        if(this.peeked) {
-            let res = this.peeked;
-            this.peeked = null;
+        if(this.unread) {
+            let res = this.unread;
+            this.unread = null;
             return res;
         }
         if(this._position === this._input.length) {
@@ -40,20 +40,21 @@ export class StringInputStream extends Stream {
     }
 
     [PEEK_CHAR](eofErrorP = true, eofValue = NIL, recursiveP = false) {
+        let oldPosition = this._position;
         if(this._position === this._input.length) {
             if(eofErrorP)
                 throw "End of file";
             return eofValue;
         }
-        return this.peeked = new LispChar(this._input[this._position]);
+        return new LispChar(this._input[this._position]);
     }
 
     [UNREAD_CHAR](character) {   
-        if(this.peeked)
+        if(this.unread)
             throw "Already unread a character";
         if(character.value !== this._input[this._position-1])
             throw "Unread character "+character.value+", but previous read character was "+this._input[this._position-1];
-        this.peeked = character;
+        this.unread = character;
     }
 }
 

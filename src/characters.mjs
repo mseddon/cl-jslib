@@ -272,7 +272,7 @@ export function digitChar(x, radix = 10) {
         throw "Type Error"
     if(x.value >= '0' && x.value <= '9')
         return x.value.charCodeAt(0) - '0'.charCodeAt(0)
-    let ch = x.toUpperCase().charCodeAt(0) - "A".charCodeAt(0) + 10;
+    let ch = x.value.toUpperCase().charCodeAt(0) - "A".charCodeAt(0) + 10;
     if(ch >= 10 && ch <= lispInstance.READ_BASE)
         return ch;
     return false;

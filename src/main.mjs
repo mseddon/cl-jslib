@@ -15,6 +15,12 @@ function initializeInstance(inst) {
     setInstance(inst);
     inst.packageNames = new Map();
     inst.CL_PACKAGE = new symbols.Package("COMMON-LISP", ["CL"]);
+
+    inst.CL_PACKAGE.QUOTE = symbols.intern("QUOTE", inst.CL_PACKAGE);
+    inst.CL_PACKAGE.FUNCTION = symbols.intern("FUNCTION", inst.CL_PACKAGE);
+
+    symbols.$export(conses.list(inst.CL_PACKAGE.QUOTE, inst.CL_PACKAGE.FUNCTION), inst.CL_PACKAGE)
+
     inst.PACKAGE = new symbols.Package("COMMON-LISP-USER", ["CL-USER"]);
     symbols.usePackage(inst.CL_PACKAGE, inst.PACKAGE);
     inst.KEYWORD_PACKAGE = new symbols.Package("KEYWORD", []);
@@ -22,7 +28,7 @@ function initializeInstance(inst) {
     inst.READ_BASE = 10;
     inst.READ_EVAL = true;
     inst.READ_SUPPRESS = false;
-    inst.READTABLE = new reader.Readtable();
+    inst.READTABLE = new reader.copyReadtable(reader.standardReadtable);
 
     return inst;
 }
@@ -40,8 +46,7 @@ let FOO = new symbols.Package("FOO");
 symbols.usePackage("CL-USER", FOO)
 let bar = symbols.intern("BAR", FOO);
 
-let is = streams.makeStringInputStream("23247348723894734");
-console.log(reader.read(is));
-console.log(reader.readtableCase()+"")
-
-console.log(blorp+"")
+let is = streams.makeStringInputStream(`
+#16RFF
+`);
+console.log(reader.read(is)+"");

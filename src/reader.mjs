@@ -1,26 +1,25 @@
 import { readChar, unreadChar } from "./streams.mjs"
-import { LispChar } from "./characters.mjs";
-import { digitCharP } from "./characters.mjs";
 import { lispInstance } from "./lisp-instance.mjs";
 import { intern } from "./symbols.mjs";
-import { digitChar } from "./characters.mjs";
-import { characterp } from "./characters.mjs";
+import { LispString } from "./strings.mjs";
+import { LispChar, digitChar, characterp, digitCharP } from "./characters.mjs";
+import { NIL, list, cons, cdr } from "./conses.mjs"
+import { peekChar } from "./streams.mjs";
 
 export class Readtable {
-    case = "UPCASE";
-
     constructor(r = null) {
         if(r) {
             this.syntax = {...r.syntax};
             this.case = r.case;
         } else {
-            this.syntax = {...standardSyntax};
+            this.syntax = {};
+            this.case = "UPCASE";
         }
     }
 }
 
-/** This is the 'standard syntax' table. */
-const standardSyntax = {};
+/** This is the standard readtable. */
+export const standardReadtable = new Readtable();
 
 /** Add a range of characters to a standard syntax type */
 function charSyntaxRange(start, end, type) {
@@ -30,29 +29,39 @@ function charSyntaxRange(start, end, type) {
         [start, end] = [end, start];
 
         for(let i=start; i<=end; i++)
-            standardSyntax[String.fromCharCode(i)] = type;
+        standardReadtable.syntax[String.fromCharCode(i)] = type;
 }
 
 /** Set a range of characters to a standard syntax type */
 function charSyntaxSet(str, type) {
     for(let i=0; i<str.length; i++)
-        standardSyntax[str[i]] = type;
+        standardReadtable.syntax[str[i]] = type;
 }
 
 export class MacroChar {
-    constructor(terminating = false, fn) {
-        this.terminating = terminating;
+    constructor(nonterminating = true, fn) {
+        this.nonterminating = nonterminating;
         this.fn = fn;
     };
 }
 
-export class DispatchMacroCharacter {
-    constructor(terminating = false) {
-        this.terminating = terminating;
-    }
-
-    fn() {
-        throw "Dispatch macro characters are NYI"
+export class DispatchMacro extends MacroChar {
+    dispatchMacros = {};    
+    constructor(nonterminating = true) {
+        super(nonterminating, (inputStream, dispChar) => {
+            let num = 0;
+            let ch;
+            for(;;) {
+                ch = readChar(inputStream, true);
+                if(digitCharP(ch))
+                    num = num*10 + digitChar(ch);
+                else
+                    break;
+            }
+            if(this.dispatchMacros[ch.value])
+                return this.dispatchMacros[ch.value](inputStream, ch, num);
+            throw dispChar.value+ch.value+" is not a dispatch macro.";
+        })
     }
 }
 
@@ -65,14 +74,11 @@ charSyntaxSet("\t\n\r\f\v ", "whitespace");
 charSyntaxSet("\\", "single escape");
 charSyntaxSet("|", "multiple escape");
 
-standardSyntax['#'] = new DispatchMacroCharacter(true);
-
 function syntaxType(x) {
     if(x instanceof LispChar)
         x = x.value;
     return lispInstance.READTABLE.syntax[x] || "invalid";
 }
-
 
 // copy-readtable
 export function copyReadtable(x) {
@@ -83,7 +89,7 @@ export function copyReadtable(x) {
 
 // make-dispatch-macro-character
 export function makeDispatchMacroCharacter(char, nonterminating = false, readtable = lispInstance.READTABLE) {
-    readtable.syntax[char] = new DispatchMacroCharacter(!nonterminating);
+    readtable.syntax[char] = new DispatchMacro(!nonterminating);
 }
 
 // This totally doesn't work yet.
@@ -107,7 +113,6 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
     }
 
     function readToken() {
-        // OM NOM NOM
         outer: for(;;) {
             let ch = readChar(inputStream, false, null, recursiveP);
             if(ch === null) {
@@ -192,6 +197,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                 throw "DERP";
             }
         }
+        
         if(potentialNumber) {
             // parse bigint.
             let sign = 1;
@@ -222,12 +228,37 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
 
             //   rational?
         }
+        if(token === ".")
+            throw ". may not appear outside of a list";
         return intern(token);
     }
 }
 
 // read-preserving-whitespace
+
 // read-delimited-list
+export function readDelimitedList(char, inputStream, recursiveP) {
+    if(characterp(char))
+        char = char.value;
+
+    if(typeof char !== "string")
+        throw "Type error";
+    
+    let sentinel = list(NIL);
+    let last = sentinel;
+
+    for(;;) {
+        skipWhitespace(inputStream);
+        let ch = readChar(inputStream, false, null, true);
+        if(ch) {
+            if(ch.value == char)
+                return sentinel.cdr;
+        }
+        unreadChar(ch, inputStream);
+        last = last.cdr = cons(read(inputStream, false, null, recursiveP), NIL);
+    }
+}
+
 // read-from-string
 
 // readtable-case
@@ -243,10 +274,24 @@ export function readtablep(x) {
 }
 
 // set-dispatch-macro-character
+export function setDispatchMacroCharacter(dispChar, subChar, newFunction, readtable = lispInstance.READTABLE) {
+    if(characterp(dispChar))
+        dispChar = dispChar.value;
+    if(characterp(subChar))
+        subChar = subChar.value;
+
+    let out = readtable.syntax[dispChar];
+    if(!(out instanceof DispatchMacro))
+        throw dispChar.value+" is not a dispatch macro";
+    out.dispatchMacros[subChar] = newFunction;
+}
+
 // get-dispatch-macro-character
 
 // set-macro-character
 export function setMacroCharacter(char, newFunction, nonTerminating = false, readtable = lispInstance.READTABLE) {
+    if(typeof char === "string")
+        char = new LispChar(char);
     if(!characterp(char))
         throw "char Type error";
     if(!readtablep(readtable))
@@ -286,3 +331,149 @@ export function setSyntaxFromChar(toChar, fromChar, toReadtable = lispInstance.R
         throw "from-readtable Type error";
     toReadtable.syntax[toChar.value] = fromReadtable.syntax[fromChar.value];
 }
+
+function isDelimiter(ch, readtable = lispInstance.READTABLE) {
+    let syntax = readtable.syntax[ch];
+    return syntax === "whitespace" || (syntax instanceof MacroChar && !syntax.nonTerminating);
+}
+
+function readToEndOfToken(inputStream) {
+    let tk = ""
+    for(;;) {
+        let ch = readChar(inputStream, false, null, true);
+        if(ch === null)
+            return tk;
+
+        if(!isDelimiter(ch.value))
+            tk += ch.value;
+        else
+            return tk;
+    }
+}
+
+function skipWhitespace(inputStream) {
+    for(;;) {
+        let ch = readChar(inputStream, false, null, true);
+        if(ch === null)
+            return;
+        if(lispInstance.READTABLE.syntax[ch.value] !== "whitespace") {
+            unreadChar(ch, inputStream);
+            return;
+        }
+    }
+}
+
+setMacroCharacter('(', (inputStream, char) => {
+    if(characterp(char))
+        char = char.value;
+
+    if(typeof char !== "string")
+        throw "Type error";
+    
+    let sentinel = list(NIL);
+    let last = sentinel;
+
+    for(;;) {
+        skipWhitespace(inputStream);
+        let ch = readChar(inputStream, false, null, true);
+        if(ch) {
+            if(ch.value == ")")
+                return sentinel.cdr;
+            if(ch.value == ".") {
+                let ch2 = syntaxType(peekChar(inputStream, true).value);
+                if(ch2 instanceof MacroChar && ch2.terminating || ch2 == "whitespace") {
+                    last.cdr = read(inputStream, true, null, true);
+                    skipWhitespace(inputStream);
+                    ch = readChar(inputStream, true, null, true);
+                    if(ch.value !== ")")
+                        throw ") expected";
+                    return sentinel.cdr;
+                }
+            }
+        }
+        unreadChar(ch, inputStream);
+        last = last.cdr = cons(read(inputStream, true, null, true), NIL);
+    }
+}, false, standardReadtable);
+
+setMacroCharacter(')', (is, ch) => {
+    throw "Unexpected )"
+}, false, standardReadtable);
+
+setMacroCharacter("'", (inputStream, ch) => {
+    return list(lispInstance.CL_PACKAGE.QUOTE, read(inputStream, true, null, true));
+}, false, standardReadtable)
+
+setMacroCharacter(";", (inputStream, ch) => {
+    for(;;) {
+        let ch = readChar(inputStream, false, null);
+        if(!ch || ch.value === '\n')
+            return;
+    }
+}, false, standardReadtable)
+
+setMacroCharacter('"', (inputStream, ch) => {
+    let string = "";
+    for(;;) {
+        let ch = readChar(inputStream, true);
+        if(ch.value == '"')
+            return new LispString(string);
+        if(ch.value == "\\")
+            ch = readChar(inputStream, true);
+        string += ch.value;
+    }
+}, false, standardReadtable)
+
+// `
+// ,
+
+// #
+makeDispatchMacroCharacter("#", false, standardReadtable);
+
+// #\
+
+// #'
+setDispatchMacroCharacter("#", "'", (inputStream, c, n) => {
+    return list(lispInstance.CL_PACKAGE.FUNCTION, read(inputStream, true, null, true));
+}, standardReadtable)
+
+// #(
+// #*
+// #.
+
+// #B
+setDispatchMacroCharacter("#", "B", (inputStream, c, n) => {
+    let tk = readToEndOfToken(inputStream);
+    return parseInt(tk, 2);
+}, standardReadtable)
+
+// #O
+setDispatchMacroCharacter("#", "O", (inputStream, c, n) => {
+    let tk = readToEndOfToken(inputStream);
+    return parseInt(tk, 8);
+}, standardReadtable)
+
+// #X
+setDispatchMacroCharacter("#", "X", (inputStream, c, n) => {
+    let tk = readToEndOfToken(inputStream);
+    return parseInt(tk, 16);
+}, standardReadtable)
+
+// #R
+setDispatchMacroCharacter("#", "R", (inputStream, c, n) => {
+    let tk = readToEndOfToken(inputStream);
+    return parseInt(tk, n);
+}, standardReadtable)
+
+// #C
+// #A
+// #S
+// #P
+// #=
+// ##
+// #+
+// #-
+// #|
+// #<
+// # <whitespace>
+// #)
