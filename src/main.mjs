@@ -34,6 +34,22 @@ function initializeInstance(inst) {
     inst.READ_SUPPRESS = false;
     inst.READTABLE = new reader.copyReadtable(reader.standardReadtable);
 
+    inst.PRINT_ARRAY = true;
+    inst.PRINT_BASE  = 10;
+    inst.PRINT_RADIX = false;
+    inst.PRINT_CASE = intern("UPCASE", inst.KEYWORD_PACKAGE);
+    inst.PRINT_CIRCLE = false;
+    inst.PRINT_ESCAPE = true;
+    inst.PRINT_GENSYM = true;
+    inst.PRINT_LEVEL  = NIL;
+    inst.PRINT_LENGTH = NIL;
+    inst.PRINT_LINES = NIL;
+    inst.PRINT_MISER_WIDTH = NIL;
+    inst.PRINT_PPRINT_DISPATCH = NIL;
+    inst.PRINT_PRETTY = true;
+    inst.PRINT_READABLY = false;
+    inst.PRINT_RIGHT_MARGIN = NIL;
+
     return inst;
 }
 
