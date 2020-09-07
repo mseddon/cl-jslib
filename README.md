@@ -36,6 +36,6 @@ Invoke `npm run build` to generate a minified / mangled bundle into `dist\bundle
 
 Currently no support for keyword arguments.
 
-At any given time in a JavaScript isolate (using Dart's terminology), the value of `lispInstance` in `lisp-instance.mjs` is bound to a running Lisp thread.
+At any given time in a JavaScript Promise, the value of `lispInstance` in `lisp-instance.mjs` is bound to a running Lisp thread. This can only sanely be achieved by the callee remembering to save and restore this value from within a closure somewhere. Since this is expected to be performed by a compiler, care must be taken to ensure that you do not accidentally forget to resurrect this value. There are also subtle implications for re-entrant code and promise composition. If you don't know what you're doing it's best to steer clear of this and wait for a forthcoming interpreter.
 
 When calling a function, if `lispInstance.wantMV` is not 1, then any function returning multiple values will return the first value normally, and extra values in `lispInstance.values`. This lets implementations of `multiple-value-bind` find the extra values, while trivial cases do not need to allocate.

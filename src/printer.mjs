@@ -33,7 +33,7 @@ export function pprintDispatch(object, table = lispInstance.PRINT_PPRINT_DISPATC
         let sym = car(object);
         let dispatch = table.conses.get(sym);
         if(dispatch) {
-            lispInstance.mv = [true];
+            lispInstance.values = [true];
             return dispatch;
         }
     }
@@ -94,4 +94,5 @@ export function print(object, outputStream) {
 // princ-to-string object
 
 // print-not-readable-object
+
 // format
