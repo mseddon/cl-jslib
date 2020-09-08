@@ -67,9 +67,8 @@ function makeInstance() {
 
 makeInstance();
 
-format(conses.NIL, "~2,,'A@:Cfoo")
-
-let is = streams.makeStringInputStream(`(#1=(a b c) #1# #1#)`);
-printer.princ(reader.read(makeStringInputStream('#1a((1 2) (3 4))')));
-
+lispInstance.PRINT_ARRAY = true;
+printer.princ(reader.read(makeStringInputStream('#2a((1 2) (3 4))')));
+printer.princ("\n");
+printer.princ(lispInstance.PACKAGE)
 console.log(lispInstance.STANDARD_OUTPUT.outputString);

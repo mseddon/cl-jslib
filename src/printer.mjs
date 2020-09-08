@@ -4,9 +4,9 @@ import { writeChar } from "./streams.mjs";
 import { charName } from "./characters.mjs";
 import { Cons, Nil, consp, car, cdr, nullp } from "./conses.mjs";
 import { eql } from "./equal.mjs"
-import { symbolp } from "./symbols.mjs"
+import { symbolp, Sym, Package } from "./symbols.mjs"
 import { LispString } from "./strings.mjs";
-import { PRINT_OBJECT, printObject } from "./print-object.mjs";
+import { PRINT_OBJECT } from "./print-object.mjs";
 import { makeStringOutputStream } from "./streams.mjs";
 import { getOutputStreamString } from "./streams.mjs";
 import { LispArray } from "./arrays.mjs";
@@ -14,6 +14,33 @@ import { LispVector } from "./arrays.mjs";
 import { stringp } from "./strings.mjs";
 import { arrayHasFillPointer } from "./arrays.mjs";
 import { freshLine } from "./streams.mjs";
+export { PRINT_OBJECT } from "./print-object.mjs";
+
+export function printObject(object, outputStream) {
+    if(object !== undefined && object !== null && object[PRINT_OBJECT])
+        return object[PRINT_OBJECT](object, outputStream);
+    return printNotReadableObject(object, outputStream);
+}
+
+const FAKE_ADDRESS = Symbol("address");
+
+function padChar(char, str, n) {
+    str = ""+str;
+    while(str.length < n)
+        str = char+str;
+    return str;
+}
+
+export function mkId(object) {
+    if(object[FAKE_ADDRESS] !== undefined)
+        return object[FAKE_ADDRESS];
+    return object[FAKE_ADDRESS] = Math.round(Math.random()*0xFFFFFFFF);
+}
+
+export function printNotReadableObject(object, outputStream) {
+    object = Object(object);
+    princ("#<"+object.constructor.name.toUpperCase()+" {"+padChar("0", mkId(object).toString(16), 8).toUpperCase()+"}>", outputStream);
+}
 
 export class PrettyPrintDispatchTable {
     constructor(oldTable) {
@@ -139,7 +166,7 @@ export function princToString(object) {
     return getOutputStreamString(str);
 }
 
-// print-not-readable-object
+// print-not-readable-object // defined in print-object
 
 export const formatDirectives = {
     'C': (stream, args, atSign, colonSign, formatArgs) => {
@@ -197,6 +224,50 @@ export const formatDirectives = {
         while(n-- > 0)
             writeChar('\v', stream);
     },
+    'D': (stream, args, atSign, colonSign, formatArgs) => {
+        let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
+        let oPRINT_RADIX = lispInstance.PRINT_RADIX;
+        let oPRINT_BASE = lispInstance.PRINT_BASE;
+        let oPRINT_READABLY = lispInstance.PRINT_READABLY;
+
+        try {
+            let radix = 10;
+            let mincol = 0;
+            let padchar = ' ';
+            let commachar = '';
+            let commaInterval = 3;
+            if(args.length) {
+                radix = args[0];
+                if(args.length >= 2) mincol = args[1];
+                if(args.length >= 3) padchar = args[2];
+                if(args.length >= 4) commachar = args[3];
+                if(args.length >= 5) commaInterval = args[4];
+            }
+            let arg = formatArgs.shift()
+            let prefix = "";
+            
+            if(atSign && arg >= 0)
+                prefix = "+";
+            
+            lispInstance.PRINT_BASE = radix;
+            let number = princToString(arg);
+            if(number[0] == "-") {
+                prefix = "-";
+                number = number.substring(1);
+            }
+            if(typeof arg === "number" && colonSign && commaInterval > 0) {
+                // now add commaaaahs.
+                let s = "";
+                
+            }
+            princ(stream, prefix+number)
+        } finally {
+            lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
+            lispInstance.PRINT_RADIX = oPRINT_RADIX;
+            lispInstance.PRINT_BASE = oPRINT_BASE;
+            lispInstance.PRINT_READABLY = oPRINT_READABLY;
+        }
+    }
 }
 
 // format
@@ -346,39 +417,53 @@ Number.prototype[PRINT_OBJECT] = (object, stream) => {
 }
 
 LispArray.prototype[PRINT_OBJECT] = (object, stream) => {
-    let index = 0;
+    if(lispInstance.PRINT_ARRAY) {
+        let index = 0;
 
-    const arrayToString = n => {
-        if(n >= object.dimensions.length) {
-            printObject(object._data[object.displacement+index++], stream);
-            return;
+        const arrayToString = n => {
+            if(n >= object.dimensions.length) {
+                printObject(object._data[object.displacement+index++], stream);
+                return;
+            }
+            writeChar("(", stream);
+            const sz = object.dimensions[n];
+            for(let i=0; i<sz; i++) {
+                arrayToString(n+1);
+                if(i + 1 < sz)
+                    writeChar(" ", stream);
+            }
+            writeChar(")", stream);
         }
-        writeChar("(", stream);
-        const sz = object.dimensions[n];
-        for(let i=0; i<sz; i++) {
-            arrayToString(n+1);
-            if(i + 1 < sz)
-                writeChar(" ", stream);
-        }
-        writeChar(")", stream);
+        
+        writeChar("#", stream);
+        princ(object.dimensions.length);
+        writeChar("A", stream);
+        arrayToString(0);
+    } else {
+        princ("#<(SIMPLE-ARRAY T ("+object.dimensions.join(' ')+") {"+padChar('0', mkId(object).toString(16).toUpperCase(), 8)+"}>")        
     }
-    
-    writeChar("#", stream);
-    princ(object.dimensions.length);
-    writeChar("A", stream);
-    arrayToString(0);
 }
 
 LispArray.prototype.toString = toStringPrintInternal;
 
 LispVector.prototype[PRINT_OBJECT] = (object, stream) => {
     let end = object.fillPointer !== undefined ? object.fillPointer : object._data.length;
-    princ("#(", stream);
-    for(let i=0; i<end; i++) {
-        printObject(object._data[i], stream);
-        if(i+1 < end)
-            writeChar(' ', stream);
+    if(lispInstance.PRINT_ARRAY) {
+        princ("#(", stream);
+        for(let i=0; i<end; i++) {
+            printObject(object._data[i], stream);
+            if(i+1 < end)
+                writeChar(' ', stream);
+        }
+        writeChar(')', stream)
+    } else {
+        princ("#<(SIMPLE-VECTOR "+object.dimensions.join(' ')+" {"+padChar('0', mkId(object).toString(16).toUpperCase(), 8)+"}>")
     }
-    writeChar(')', stream)
 }
 LispVector.prototype.toString = toStringPrintInternal;
+
+Package.prototype[PRINT_OBJECT] = (object, stream) => {
+    princ("#<PACKAGE ", stream);
+    prin1(object.name, stream);
+    writeChar(">", stream);
+}

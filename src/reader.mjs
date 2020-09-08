@@ -7,6 +7,7 @@ import { NIL, list, consp, cons, car, cdr, listLength, listToJSArray } from "./c
 import { peekChar } from "./streams.mjs";
 import { vector, LispArray } from "./arrays.mjs"
 import { nullp } from "./conses.mjs";
+import { makeStringInputStream } from "./streams.mjs";
 
 export class Readtable {
     constructor(r = null) {
@@ -275,11 +276,20 @@ export function readDelimitedList(char, inputStream, recursiveP) {
 }
 
 // read-from-string
+export function readFromString(string, eofErrorP = true, eofValue = null) {
+    // TODO: &key start end preserve-whitespace
+    let stream = makeStringInputStream(string);
+    let expr = read(stream, eofErrorP, eofValue);
+    if(lispInstance.wantMV > 1)
+        lispInstance.values = [stream._position];
+    return expr;
+}
 
 // readtable-case
 export function readtableCase(x = lispInstance.READTABLE) {
     if(!readtablep(x))
         throw "Type error";
+    // TODO unnecessarily stupid, use lispInstance keyword constants.
     return intern(x.case, lispInstance.KEYWORD_PACKAGE);
 }
 
