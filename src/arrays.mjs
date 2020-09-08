@@ -29,7 +29,8 @@ export class LispVector extends LispArray {
     }
 }
 
-// make-array
+// make-array dimensions &key element-type initial-element initial-contents adjustable fill-pointer displaced-to displaced-index-offset
+
 // adjust-array
 // adjustable-array-p
 

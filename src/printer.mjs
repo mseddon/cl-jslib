@@ -168,8 +168,9 @@ export function princToString(object) {
 
 // print-not-readable-object // defined in print-object
 
+// format
 export const formatDirectives = {
-    'C': (stream, args, atSign, colonSign, formatArgs) => {
+    'C': (stream, args, colonSign, atSign, formatArgs) => {
         if(args.length)
             throw "Too many arguments to ~C directive";
         if(colonSign && atSign)
@@ -181,7 +182,7 @@ export const formatDirectives = {
         else
             princ(formatArgs.shift(), stream);
     },
-    '%': (stream, args, atSign, colonSign, formatArgs) => {
+    '%': (stream, args, colonSign, atSign, formatArgs) => {
         let n = 1;
         if(args.length == 1) {
             if(typeof args[i] !== "number")
@@ -192,7 +193,7 @@ export const formatDirectives = {
         while(n-- > 0)
             writeChar('\n', stream);
     },
-    '&': (stream, args, atSign, colonSign, formatArgs) => {
+    '&': (stream, args, colonSign, atSign, formatArgs) => {
         let n = 1;
         if(args.length == 1) {
             if(typeof args[i] !== "number")
@@ -204,7 +205,7 @@ export const formatDirectives = {
         while(n-- > 0)
             writeChar('\n', stream);
     },
-    '~': (stream, args, atSign, colonSign, formatArgs) => {
+    '~': (stream, args, colonSign, atSign, formatArgs) => {
         let n = 1;
         if(args.length == 1) {
             if(typeof args[i] !== "number")
@@ -214,7 +215,7 @@ export const formatDirectives = {
         while(n-- > 0)
             writeChar('~', stream);
     },
-    '|': (stream, args, atSign, colonSign, formatArgs) => {
+    '|': (stream, args, colonSign, atSign, formatArgs) => {
         let n = 1;
         if(args.length == 1) {
             if(typeof args[i] !== "number")
@@ -224,7 +225,7 @@ export const formatDirectives = {
         while(n-- > 0)
             writeChar('\v', stream);
     },
-    'D': (stream, args, atSign, colonSign, formatArgs) => {
+    'D': (stream, args, colonSign, atSign, formatArgs) => {
         let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
         let oPRINT_RADIX = lispInstance.PRINT_RADIX;
         let oPRINT_BASE = lispInstance.PRINT_BASE;
@@ -270,7 +271,6 @@ export const formatDirectives = {
     }
 }
 
-// format
 export function format(designator, controlString, ...args) {
     let stream;
     if(nullp(designator))
@@ -338,7 +338,7 @@ export function format(designator, controlString, ...args) {
             let directive = controlString[rp++].toUpperCase();
             if(!formatDirectives[directive])
                 throw "Invalid format directive ~"+directive;
-            formatDirectives[directive](stream, csArgs, atSign, colonSign)
+            formatDirectives[directive](stream, csArgs, colonSign, atSign)
         } else {
             writeChar(ch, stream);
         }
@@ -460,6 +460,7 @@ LispVector.prototype[PRINT_OBJECT] = (object, stream) => {
         princ("#<(SIMPLE-VECTOR "+object.dimensions.join(' ')+" {"+padChar('0', mkId(object).toString(16).toUpperCase(), 8)+"}>")
     }
 }
+
 LispVector.prototype.toString = toStringPrintInternal;
 
 Package.prototype[PRINT_OBJECT] = (object, stream) => {
