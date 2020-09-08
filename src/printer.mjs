@@ -1,6 +1,7 @@
 import { svref } from "./arrays.mjs"
 import { lispInstance } from "./lisp-instance.mjs";
 import { writeChar } from "./streams.mjs";
+import { charName } from "./characters.mjs";
 import { Cons, Nil, consp, car, cdr, nullp } from "./conses.mjs";
 import { eql } from "./equal.mjs"
 import { symbolp } from "./symbols.mjs"
@@ -10,6 +11,9 @@ import { makeStringOutputStream } from "./streams.mjs";
 import { getOutputStreamString } from "./streams.mjs";
 import { LispArray } from "./arrays.mjs";
 import { LispVector } from "./arrays.mjs";
+import { stringp } from "./strings.mjs";
+import { arrayHasFillPointer } from "./arrays.mjs";
+import { freshLine } from "./streams.mjs";
 
 export class PrettyPrintDispatchTable {
     constructor(oldTable) {
@@ -137,7 +141,138 @@ export function princToString(object) {
 
 // print-not-readable-object
 
+export const formatDirectives = {
+    'C': (stream, args, atSign, colonSign, formatArgs) => {
+        if(args.length)
+            throw "Too many arguments to ~C directive";
+        if(colonSign && atSign)
+            princ(charName(formatArgs.shift()), stream);
+        else if(atSign)
+            prin1(formatArgs.shift(), stream);
+        else if(colonSign)
+            princ(charName(formatArgs.shift()), stream);
+        else
+            princ(formatArgs.shift(), stream);
+    },
+    '%': (stream, args, atSign, colonSign, formatArgs) => {
+        let n = 1;
+        if(args.length == 1) {
+            if(typeof args[i] !== "number")
+                throw "Number expected";
+            
+        } else if(args.length !== 0)
+            throw "Too many arguments to ~% directive";
+        while(n-- > 0)
+            writeChar('\n', stream);
+    },
+    '&': (stream, args, atSign, colonSign, formatArgs) => {
+        let n = 1;
+        if(args.length == 1) {
+            if(typeof args[i] !== "number")
+                throw "Number expected";
+        } else if(args.length !== 0)
+            throw "Too many arguments to ~% directive";
+        if(n > 0)
+            freshLine(stream);
+        while(n-- > 0)
+            writeChar('\n', stream);
+    },
+    '~': (stream, args, atSign, colonSign, formatArgs) => {
+        let n = 1;
+        if(args.length == 1) {
+            if(typeof args[i] !== "number")
+                throw "Number expected";      
+        } else if(args.length !== 0)
+            throw "Too many arguments to ~% directive";
+        while(n-- > 0)
+            writeChar('~', stream);
+    },
+    '|': (stream, args, atSign, colonSign, formatArgs) => {
+        let n = 1;
+        if(args.length == 1) {
+            if(typeof args[i] !== "number")
+                throw "Number expected";      
+        } else if(args.length !== 0)
+            throw "Too many arguments to ~% directive";
+        while(n-- > 0)
+            writeChar('\v', stream);
+    },
+}
+
 // format
+export function format(designator, controlString, ...args) {
+    let stream;
+    if(nullp(designator))
+        stream = makeStringOutputStream();
+    else if(designator === true)
+        stream = lispInstance.STANDARD_OUTPUT;
+    else if(stringp(designator) && arrayHasFillPointer(designator)) {
+        throw "NYI";
+    } else {
+        throw "designator: Not a stream, string, nil or t";
+    }
+
+    if(typeof controlString !== "string")
+        throw "Control string not a string, and that's all I do atm."
+    let rp = 0;
+    do {
+        let ch = controlString[rp++];
+        if(ch === '~') {
+            let csArgs = [];
+            for(;;) {
+                ch = controlString[rp++];
+                if(ch == ",") {
+                    csArgs.push(undefined);
+                    continue;
+                } else if(ch == "'") {
+                    csArgs.push(controlString[rp++]);
+                } else if(ch == '+' || ch == '-' || (ch >= '0' && ch <= '9')){
+                    // this is a numeric arg
+                    let int = "";
+                    let sign = "";
+                    if(ch == "+" || ch == "-")
+                        sign = ch;
+                    else int = ch;
+                    while(rp < controlString.length && controlString[rp] >= '0' && controlString[rp] <= '9') {
+                        int += controlString[rp++];
+                    }
+                    if(!int.length)
+                        throw "Integer parameter expected";
+                    csArgs.push(parseInt(sign+int));
+                }
+                if(controlString[rp] == ',') {
+                    rp++;
+                    continue;
+                }
+                break;
+            }
+
+            let atSign = false, colonSign = false;
+
+            while(rp < controlString.length) {
+                if(controlString[rp] == '@') {
+                    rp++;
+                    if(atSign)
+                        throw ": already appeared in this directive";
+                    atSign = true;
+                } else if(controlString[rp] == ':') {
+                    rp++;
+                    if(colonSign)
+                        throw ": already appeared in this directive";
+                    colonSign = true;
+                } else
+                    break;
+            }
+
+            let directive = controlString[rp++].toUpperCase();
+            if(!formatDirectives[directive])
+                throw "Invalid format directive ~"+directive;
+            formatDirectives[directive](stream, csArgs, atSign, colonSign)
+        } else {
+            writeChar(ch, stream);
+        }
+    } while(rp < controlString.length)
+}
 
 /**** Print Object implementations ****/
 function toStringPrintInternal() {
@@ -183,13 +318,13 @@ Cons.prototype[PRINT_OBJECT] = (object, stream) => {
     writeChar(')', stream);
 }
 
-Cons.prototype.toString = printToStringInternal;
+Cons.prototype.toString = toStringPrintInternal;
 
 Nil.prototype[PRINT_OBJECT] = (object, stream) => {
     princ('NIL');
 }
 
-Nil.prototype.toString = printToStringInternal;
+Nil.prototype.toString = toStringPrintInternal;
 
 String.prototype[PRINT_OBJECT] = (object, stream) => {
     if(lispInstance.PRINT_READABLY || lispInstance.PRINT_ESCAPE) {
@@ -234,8 +369,7 @@ LispArray.prototype[PRINT_OBJECT] = (object, stream) => {
     arrayToString(0);
 }
 
-LispArray.prototype.toString = printToStringInternal;
-
+LispArray.prototype.toString = toStringPrintInternal;
 
 LispVector.prototype[PRINT_OBJECT] = (object, stream) => {
     let end = object.fillPointer !== undefined ? object.fillPointer : object._data.length;
@@ -247,4 +381,4 @@ LispVector.prototype[PRINT_OBJECT] = (object, stream) => {
     }
     writeChar(')', stream)
 }
-LispVector.prototype.toString = printToStringInternal;
+LispVector.prototype.toString = toStringPrintInternal;

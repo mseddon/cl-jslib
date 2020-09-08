@@ -13,6 +13,7 @@ import * as printer from "./printer.mjs";
 import { setInstance, LispInstance, lispInstance } from "./lisp-instance.mjs"
 import { PrettyPrintDispatchTable } from "./printer.mjs";
 import { makeStringInputStream } from "./streams.mjs";
+import { format } from "./printer.mjs";
 
 function initializeInstance(inst) {
     setInstance(inst);
@@ -58,13 +59,15 @@ function initializeInstance(inst) {
     return inst;
 }
 
-globalThis["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings};
+globalThis["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings, ...printer};
 
 function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
 }
 
 makeInstance();
+
+format(conses.NIL, "~2,,'A@:Cfoo")
 
 let is = streams.makeStringInputStream(`(#1=(a b c) #1# #1#)`);
 printer.princ(reader.read(makeStringInputStream('#1a((1 2) (3 4))')));
