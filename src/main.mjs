@@ -8,9 +8,11 @@ import * as characters from "./characters.mjs";
 import * as sequences from "./sequences.mjs";
 import * as symbols from "./symbols.mjs";
 import * as strings from "./strings.mjs";
+import * as printer from "./printer.mjs";
 
 import { setInstance, LispInstance, lispInstance } from "./lisp-instance.mjs"
 import { PrettyPrintDispatchTable } from "./printer.mjs";
+import { makeStringInputStream } from "./streams.mjs";
 
 function initializeInstance(inst) {
     setInstance(inst);
@@ -51,6 +53,8 @@ function initializeInstance(inst) {
     inst.PRINT_READABLY = false;
     inst.PRINT_RIGHT_MARGIN = conses.NIL;
 
+    inst.STANDARD_OUTPUT = new streams.makeStringOutputStream();
+
     return inst;
 }
 
@@ -62,10 +66,7 @@ function makeInstance() {
 
 makeInstance();
 
-let blorp = symbols.intern("BLORP", lispInstance.CL_PACKAGE);
-let FOO = new symbols.Package("FOO");
-symbols.usePackage("CL-USER", FOO)
-let bar = symbols.intern("BAR", FOO);
-
 let is = streams.makeStringInputStream(`(#1=(a b c) #1# #1#)`);
-console.log(reader.read(is)+"");
+printer.princ(reader.read(makeStringInputStream('#1a((1 2) (3 4))')));
+
+console.log(lispInstance.STANDARD_OUTPUT.outputString);

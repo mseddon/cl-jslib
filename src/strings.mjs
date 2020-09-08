@@ -1,4 +1,4 @@
-import { LispVector, svref } from "./arrays.mjs";
+import { LispVector } from "./arrays.mjs";
 import { LispChar } from "./characters.mjs";
 import * as sequences from "./sequences.mjs";
 import { charUpcase } from "./characters.mjs";
@@ -19,18 +19,6 @@ export class LispString extends LispVector {
     [sequences.COPY_SEQ](x) {
         let len = sequences.length(x);
         return new LispString(x._data.slice(0, len));
-    }
-
-    toString() {
-        let out = '"';
-        let end = this.fillPointer === undefined ? this._data.length : this.fillPointer;
-        for(let i=0; i<end; i++) {
-            let ch = svref(this, i);
-            if(ch.value === '"')
-                out += "\\";
-            out += ch.value;
-        }
-        return out + '"';
     }
 }
 

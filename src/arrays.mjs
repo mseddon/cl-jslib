@@ -11,29 +11,6 @@ export class LispArray {
         initial.length = this.dimensions.reduce((x, y) => x * y);
         this._data = initial;
     }
-
-    toString() {
-        let index = 0;
-        let out = "";
-
-        const arrayToString = n => {
-            if(n >= this.dimensions.length) {
-                out += this._data[this.displacement+index++];
-                return;
-            }
-            out += "(";
-            const sz = this.dimensions[n];
-            for(let i=0; i<sz; i++) {
-                arrayToString(n+1);
-                if(i + 1 < sz)
-                    out += " ";
-            }
-            out += ")";
-            return out;
-        }
-        
-        return "#"+this.dimensions.length+"A"+arrayToString(0);
-    }
 }
 
 export class LispVector extends LispArray {
@@ -42,17 +19,6 @@ export class LispVector extends LispArray {
     }
 
     fillPointer = undefined;
-
-    toString() {
-        let end = this.fillPointer !== undefined ? this.fillPointer : this._data.length;
-        let out = "#(";
-        for(let i=0; i<end; i++) {
-            out+=this._data[i];
-            if(i+1 < end)
-                out += " ";
-        }
-        return out+")";
-    }
 
     [ELT](me, n) {
         return svref(me, n);

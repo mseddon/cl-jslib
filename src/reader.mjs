@@ -206,7 +206,7 @@ export function read(inputStream, eofErrorP = true, eofValue = null, recursiveP 
                             continue outer;
                         return res // function returned a single result (hopefully ;) - return it.
                     }
-                    throw "DERP";
+                    throw "THIS IS A BUG IN THE READER";
                 }
             }
             
