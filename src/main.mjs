@@ -99,6 +99,7 @@ function initializeInstance(inst) {
     return inst;
 }
 
+globalThis["CL-JSLIB"] = {...conses, ...streams, ...arrays, ...characters, ...equal, ...reader, ...symbols, ...sequences, ...strings, ...printer};
 
 function makeInstance() {
     return setInstance(initializeInstance(new LispInstance()));
@@ -106,7 +107,6 @@ function makeInstance() {
 
 makeInstance();
 
-
-format(true, "~:R", 999999999999999999999999999999999999999999999999999999999999999999n);
+format(true, "~3,2,0,'XF", 0.1234567890123456789);
 
 console.log(lispInstance.STANDARD_OUTPUT.outputString);

@@ -31,6 +31,13 @@ function padChar(char, str, n) {
     return str;
 }
 
+function padCharRight(char, str, n) {
+    str = ""+str;
+    while(str.length < n)
+        str += char;
+    return str;
+}
+
 export function mkId(object) {
     if(object[FAKE_ADDRESS] !== undefined)
         return object[FAKE_ADDRESS];
@@ -352,7 +359,7 @@ function toEnglish(number, ord = false) {
 
         if(rem > 0n)
             return out + ENGLISH_TENS[quot]+"-"+(ord ? ENGLISH_ATOMIC_ORD : ENGLISH_ATOMIC)[rem];
-        return out + ENGLISH_TENS[quot];
+        return out + (ord ? ENGLISH_TENS_ORD : ENGLISH_TENS)[quot];
     }
 
     if(number < 1000n) {
@@ -498,7 +505,96 @@ addDirective('X', (stream, args, colonSign, atSign, formatArgs) => {
     args.unshift(16);
     return R_DIRECTIVE(stream, args, colonSign, atSign, formatArgs);
 });
+
 addDirective('R', R_DIRECTIVE);
+
+addDirective('F', (stream, args, colonSign, atSign, formatArgs) => {
+    let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
+    let oPRINT_READABLY = lispInstance.PRINT_READABLY;
+
+    try {
+        let w = 0;
+        let d = 8;
+        let k = 0;
+        let overflowchar;
+        let padchar = ' ';
+        if(args.length) {
+            w = args[0];
+            if(args.length >= 2) d = args[1];
+            if(args.length >= 3) k = args[2];
+            if(args.length >= 4) overflowchar = args[3];
+            if(args.length >= 5) padchar = args[4];
+        }
+        d++;
+
+        let num = formatArgs.shift();
+
+        let int = Math.floor(num)+"";
+
+        let frac = "0";
+
+        if(d-int.length > 0)
+            frac = padCharRight('0', (num-Math.floor(num)).toFixed(Math.min(d-int.length, 8)).substr(2), d-int.length);
+
+        let str = int+"."+frac;
+        if(atSign && str >= 0)
+            str = "+"+str;
+        if(str.length > w) {
+            if(int === "0") {
+                str = "."+frac;
+                if(atSign && str >= 0)
+                    str = "+"+str;
+            }
+        }
+        if(str.length > w && overflowchar) {
+            return princ(padChar(overflowchar, "", w));
+        }
+        
+        return princ(padChar(padchar, str, w), stream);
+    } finally {
+        lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
+        lispInstance.PRINT_READABLY = oPRINT_READABLY;
+    }
+});
+
+addDirective('E', (stream, args, colonSign, atSign, formatArgs) => {
+    let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
+    let oPRINT_READABLY = lispInstance.PRINT_READABLY;
+
+    try {
+        if(!args.length) {
+            // special radix mode.
+            if(atSign && colonSign)
+                return princ(toRomanNumeral(formatArgs.shift(), OLD_ROMAN_BASES));
+            if(atSign)
+                return princ(toRomanNumeral(formatArgs.shift()));
+            return princ(toEnglish(formatArgs.shift(), colonSign));
+        }
+        let w = 0;
+        let d = 8;
+        let e = 8;
+        let k = 0;
+        let overflowchar;
+        let padchar = ' ';
+        let exponentChar = 'e';
+
+        if(args.length) {
+            w = args[0];
+            if(args.length >= 2) d = args[1];
+            if(args.length >= 3) e = args[2];
+            if(args.length >= 4) k = args[3];
+            if(args.length >= 5) overflowchar = args[4];
+            if(args.length >= 6) padchar = args[5];
+            if(args.length >= 7) exponentChar = args[6];
+        }
+
+        throw "E NYI";
+    } finally {
+        lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
+        lispInstance.PRINT_READABLY = oPRINT_READABLY;
+    }
+});
+
 
 export function format(designator, controlString, ...args) {
     let stream;
@@ -530,6 +626,8 @@ export function format(designator, controlString, ...args) {
                     continue;
                 } else if(ch == "'") {
                     csArgs.push(controlString[rp++]);
+                    if(controlString[rp] !== ',')
+                        break;
                 } else if(ch == '+' || ch == '-' || (ch >= '0' && ch <= '9')){
                     // this is a numeric arg
                     let int = "";
@@ -543,6 +641,8 @@ export function format(designator, controlString, ...args) {
                     if(!int.length)
                         throw "Integer parameter expected";
                     csArgs.push(parseInt(sign+int));
+                    if(controlString[rp] !== ',')
+                        break;
                 }
                 if(controlString[rp] == ',') {
                     rp++;
