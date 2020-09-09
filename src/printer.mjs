@@ -240,7 +240,10 @@ const OLD_ROMAN_BASES = [["I", 1], ["V", 5], ["X", 10], ["L", 50], ["C", 100], [
 
 function toRomanNumeral(number, BASES = ROMAN_BASES) {
     let index = BASES.length-1;
-
+    if(number < 0)
+        throw "Can only print non-negative roman numerals."
+    if(number > 3999)
+        throw "Number too large to print as a roman numeral."
     let out = "";
     while(index > 0) {
         while(index > 0 && BASES[index][1] > number)
