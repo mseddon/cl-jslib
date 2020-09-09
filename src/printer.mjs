@@ -174,6 +174,7 @@ export const formatDirectives = {};
 function addDirective(char, fn) {
     formatDirectives[char] = fn;
 }
+
 addDirective('C', (stream, args, colonSign, atSign, formatArgs) => {
     if(args.length)
         throw "Too many arguments to ~C directive";
@@ -186,6 +187,7 @@ addDirective('C', (stream, args, colonSign, atSign, formatArgs) => {
     else
         princ(formatArgs.shift(), stream);
 });
+
 addDirective('%', (stream, args, colonSign, atSign, formatArgs) => {
     let n = 1;
         if(args.length == 1) {
@@ -197,6 +199,7 @@ addDirective('%', (stream, args, colonSign, atSign, formatArgs) => {
         while(n-- > 0)
             writeChar('\n', stream);
 });
+
 addDirective('&', (stream, args, colonSign, atSign, formatArgs) => {
     let n = 1;
     if(args.length == 1) {
@@ -220,6 +223,7 @@ addDirective('~', (stream, args, colonSign, atSign, formatArgs) => {
     while(n-- > 0)
         writeChar('~', stream);
 });
+
 addDirective('|', (stream, args, colonSign, atSign, formatArgs) => {
     let n = 1;
     if(args.length == 1) {
@@ -231,6 +235,29 @@ addDirective('|', (stream, args, colonSign, atSign, formatArgs) => {
         writeChar('\v', stream);
 });
 
+const ROMAN_BASES = [["I", 1], ["IV", 4], ["V", 5], ["IX", 9], ["X", 10], ["XL", 40], ["L", 50], ["XC", 90], ["C", 100], ["CD", 400], ["D", 500], ["CM", 900], ["M", 1000]];
+const OLD_ROMAN_BASES = [["I", 1], ["V", 5], ["X", 10], ["L", 50], ["C", 100], ["D", 500], ["M", 1000]];
+
+function toRomanNumeral(number, BASES = ROMAN_BASES) {
+    let index = BASES.length-1;
+
+    let out = "";
+    while(index > 0) {
+        while(index > 0 && BASES[index][1] > number)
+            index--;
+        if(index > 0) {
+            let symbol = BASES[index][0];
+            let base = BASES[index][1];
+
+            let div = (number / base)|0;
+
+            number = number % base
+            for(let i=0; i<div; i++)
+                out += symbol;
+        }
+    }
+    return out;
+}
 
 const R_DIRECTIVE = (stream, args, colonSign, atSign, formatArgs) => {
     let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
@@ -239,6 +266,12 @@ const R_DIRECTIVE = (stream, args, colonSign, atSign, formatArgs) => {
     let oPRINT_READABLY = lispInstance.PRINT_READABLY;
 
     try {
+        if(!args.length) {
+            // special radix mode.
+            if(atSign && colonSign)
+                return princ(toRomanNumeral(formatArgs.shift(), OLD_ROMAN_BASES));
+            return princ(toRomanNumeral(formatArgs.shift()));
+        }
         let radix = 10;
         let mincol = 0;
         let padchar = ' ';
@@ -328,6 +361,10 @@ export function format(designator, controlString, ...args) {
             let csArgs = [];
             for(;;) {
                 ch = controlString[rp++];
+                if(ch == '@' || ch == ':') {
+                    rp--;
+                    break;
+                }
                 if(ch == ",") {
                     csArgs.push(undefined);
                     continue;
