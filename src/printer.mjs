@@ -527,7 +527,7 @@ addDirective('F', (stream, args, colonSign, atSign, formatArgs) => {
         }
         d++;
 
-        let num = formatArgs.shift();
+        let num = formatArgs.shift()*Math.pow(10, k);
 
         let int = Math.floor(num)+"";
 
