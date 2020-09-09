@@ -334,13 +334,15 @@ const ENGLISH_THOUSANDS = [
 ]
 
 function toEnglish(number, ord = false) {
+    number = BigInt(number);
     let out = "";
     if(number < 0n) {
         number = -number;
         out += "negative";
     }
+    if(number > 999999999999999999999999999999999999999999999999999999999999999999n)
+        throw "Number to big to print in english."
 
-    number = BigInt(number);
     if(number <= 20n) {
         return out + (ord ? ENGLISH_ATOMIC_ORD : ENGLISH_ATOMIC)[number];
     }
