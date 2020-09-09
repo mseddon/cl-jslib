@@ -527,28 +527,34 @@ addDirective('F', (stream, args, colonSign, atSign, formatArgs) => {
         }
         d++;
 
-        let num = formatArgs.shift()*Math.pow(10, k);
+        let num = formatArgs.shift();
 
         let int = Math.floor(num)+"";
 
         let frac = "0";
 
+        let kn = d-int.length+k;
+
+
         if(d-int.length > 0)
-            frac = padCharRight('0', (num-Math.floor(num)).toFixed(Math.min(d-int.length, 8)).substr(2), d-int.length);
+            frac = (num-Math.floor(num)).toFixed(Math.min(kn, 8)).substr(2);
+
+        int = (int === "0" ? "" : int) + frac.substring(0,k);
+        frac = frac.substr(k);
+
+
 
         let str = int+"."+frac;
         if(atSign && str >= 0)
             str = "+"+str;
-        if(str.length > w) {
-            if(int === "0") {
-                str = "."+frac;
-                if(atSign && str >= 0)
-                    str = "+"+str;
-            }
+        if(str.length > w && int === "0") {
+            // miser mode.
+            str = "."+frac;
+            if(atSign && str >= 0)
+                str = "+"+str;
         }
-        if(str.length > w && overflowchar) {
+        if(str.length > w && overflowchar)
             return princ(padChar(overflowchar, "", w));
-        }
         
         return princ(padChar(padchar, str, w), stream);
     } finally {

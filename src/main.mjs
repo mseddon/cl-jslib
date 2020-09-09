@@ -107,6 +107,6 @@ function makeInstance() {
 
 makeInstance();
 
-format(true, "~,2,1F", 0.1234567890123456789);
+format(true, "~,3,0F", 0.1234567890123456789);
 
 console.log(lispInstance.STANDARD_OUTPUT.outputString);
