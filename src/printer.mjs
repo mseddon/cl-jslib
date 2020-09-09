@@ -238,6 +238,112 @@ addDirective('|', (stream, args, colonSign, atSign, formatArgs) => {
 const ROMAN_BASES = [["I", 1], ["IV", 4], ["V", 5], ["IX", 9], ["X", 10], ["XL", 40], ["L", 50], ["XC", 90], ["C", 100], ["CD", 400], ["D", 500], ["CM", 900], ["M", 1000]];
 const OLD_ROMAN_BASES = [["I", 1], ["V", 5], ["X", 10], ["L", 50], ["C", 100], ["D", 500], ["M", 1000]];
 
+
+const ENGLISH_WORDS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen"
+];
+
+const ENGLISH_TENS = [
+    "ten",
+    "twenty",
+    "thirty",
+    "fourty",
+    "fifty",
+    "sixty",
+    "seventy",
+    "eighty",
+    "ninety",
+];
+
+const ENGLISH_THOUSANDS = [
+    "thousand",
+    "million",
+    "billion",
+    "trillion",
+    "quadrillion",
+    "quintillion",
+    "sextillion",
+    "septillion",
+    "octillion",
+    "nonillion",
+    "decillion",
+    "undecillion",
+    "duodecillion",
+    "tredecillion",
+    "quattuordecillion",
+    "quindecillion",
+    "sexdecillion",
+    "septendecillion",
+    "octodecillion",
+    "novemdecillion",
+    "vigintillion"
+]
+
+function toEnglish(number) {
+    number = BigInt(number);
+    if(number <= 20n)
+        return ENGLISH_WORDS[number];
+    if(number < 100n) {
+        let rem = (number % 10n);
+        let quot = (number / 10n)-1n;
+
+        if(rem > 0n)
+            return ENGLISH_TENS[quot]+"-"+ENGLISH_WORDS[rem];
+        return ENGLISH_TENS[quot];
+    }
+
+    let out = "";
+    if(number < 1000n) {
+        let rem = (number % 100n);
+        let quot = (number / 100n);
+
+        number = rem;
+        if(number > 0)
+            return toEnglish(quot)+" hundred "+toEnglish(number);
+        return toEnglish(quot)+" hundred";
+    }
+
+    let index = ENGLISH_THOUSANDS.length-1
+    let n = 1000000000000000000000000000000000000000000000000000000000000000n;
+
+    while(index > 0) {
+        while(index > 0 && n > number) {
+            n /= 1000n;
+            index--;
+        }
+
+        if(index >= 0) {
+            let base = n;
+
+            let div = (number / base)|0n;
+
+            number = number % base;
+            if(div !== 0n)
+                out += toEnglish(div)+" "+ENGLISH_THOUSANDS[index]+" ";
+        }
+    }
+    return out + toEnglish(number);
+}
+
 function toRomanNumeral(number, BASES = ROMAN_BASES) {
     let index = BASES.length-1;
     if(number < 0)
@@ -248,7 +354,7 @@ function toRomanNumeral(number, BASES = ROMAN_BASES) {
     while(index > 0) {
         while(index > 0 && BASES[index][1] > number)
             index--;
-        if(index > 0) {
+        if(index >= 0) {
             let symbol = BASES[index][0];
             let base = BASES[index][1];
 
@@ -273,7 +379,11 @@ const R_DIRECTIVE = (stream, args, colonSign, atSign, formatArgs) => {
             // special radix mode.
             if(atSign && colonSign)
                 return princ(toRomanNumeral(formatArgs.shift(), OLD_ROMAN_BASES));
-            return princ(toRomanNumeral(formatArgs.shift()));
+            if(atSign)
+                return princ(toRomanNumeral(formatArgs.shift()));
+            // :
+            // ~R
+            return princ(toEnglish(formatArgs.shift()));
         }
         let radix = 10;
         let mincol = 0;
@@ -390,8 +500,10 @@ export function format(designator, controlString, ...args) {
                 if(controlString[rp] == ',') {
                     rp++;
                     continue;
-                } else
+                } else {
+                    rp--;
                     break;
+                }
             }
 
             let atSign = false, colonSign = false;

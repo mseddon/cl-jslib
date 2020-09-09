@@ -110,6 +110,6 @@ function makeInstance() {
 makeInstance();
 
 
-format(true, "~:@R", 3999)
+format(true, "~R", 1001236);
 
 console.log(lispInstance.STANDARD_OUTPUT.outputString);
