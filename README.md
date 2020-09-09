@@ -4,7 +4,7 @@ A small JavaScript runtime for the Common Lisp standard library.
 ## About
 
 `CL-JSLIB` is an implementation of the Common Lisp standard library.
-It's purpose is to provide a small, fast, standard compliant native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 10k.
+It's purpose is to provide a small, fast, standard compliant native implementation suitable for interfacing with a JS hosted Common Lisp environment. Currently the minified / gzipped bundle size sits under 11k.
 
 ## Rationale
 

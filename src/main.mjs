@@ -96,8 +96,6 @@ function initializeInstance(inst) {
     inst.PRINT_RIGHT_MARGIN = conses.NIL;
 
     inst.STANDARD_OUTPUT = new streams.makeStringOutputStream();
-
-
     return inst;
 }
 
@@ -110,6 +108,6 @@ function makeInstance() {
 makeInstance();
 
 
-format(true, "~R", 1001236);
+format(true, "~:R", -104342350508302n);
 
 console.log(lispInstance.STANDARD_OUTPUT.outputString);

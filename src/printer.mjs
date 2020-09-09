@@ -239,7 +239,7 @@ const ROMAN_BASES = [["I", 1], ["IV", 4], ["V", 5], ["IX", 9], ["X", 10], ["XL",
 const OLD_ROMAN_BASES = [["I", 1], ["V", 5], ["X", 10], ["L", 50], ["C", 100], ["D", 500], ["M", 1000]];
 
 
-const ENGLISH_WORDS = [
+const ENGLISH_ATOMIC = [
     "zero",
     "one",
     "two",
@@ -262,6 +262,29 @@ const ENGLISH_WORDS = [
     "nineteen"
 ];
 
+const ENGLISH_ATOMIC_ORD = [
+    "zeroth",
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth",
+    "ninth",
+    "tenth",
+    "eleventh",
+    "twelfth",
+    "thirteenth",
+    "fourteenth",
+    "fifteenth",
+    "sixteenth",
+    "seventeenth",
+    "eighteenth",
+    "nineteenth"
+];
+
 const ENGLISH_TENS = [
     "ten",
     "twenty",
@@ -272,6 +295,18 @@ const ENGLISH_TENS = [
     "seventy",
     "eighty",
     "ninety",
+];
+
+const ENGLISH_TENS_ORD = [
+    "tenth",
+    "twentieth",
+    "thirtieth",
+    "fourtieth",
+    "fiftieth",
+    "sixtieth",
+    "seventieth",
+    "eightieth",
+    "ninetieth",
 ];
 
 const ENGLISH_THOUSANDS = [
@@ -298,27 +333,35 @@ const ENGLISH_THOUSANDS = [
     "vigintillion"
 ]
 
-function toEnglish(number) {
+function toEnglish(number, ord = false) {
+    let out = "";
+    if(number < 0n) {
+        number = -number;
+        out += "negative";
+    }
+
     number = BigInt(number);
-    if(number <= 20n)
-        return ENGLISH_WORDS[number];
+    if(number <= 20n) {
+        return out + (ord ? ENGLISH_ATOMIC_ORD : ENGLISH_ATOMIC)[number];
+    }
     if(number < 100n) {
         let rem = (number % 10n);
         let quot = (number / 10n)-1n;
 
         if(rem > 0n)
-            return ENGLISH_TENS[quot]+"-"+ENGLISH_WORDS[rem];
-        return ENGLISH_TENS[quot];
+            return out + ENGLISH_TENS[quot]+"-"+(ord ? ENGLISH_ATOMIC_ORD : ENGLISH_ATOMIC)[rem];
+        return out + ENGLISH_TENS[quot];
     }
 
-    let out = "";
     if(number < 1000n) {
         let rem = (number % 100n);
         let quot = (number / 100n);
 
         number = rem;
         if(number > 0)
-            return toEnglish(quot)+" hundred "+toEnglish(number);
+            return toEnglish(quot)+" hundred "+toEnglish(number, ord);
+        if(ord)
+            return toEnglish(quot)+" hundredth";
         return toEnglish(quot)+" hundred";
     }
 
@@ -326,6 +369,8 @@ function toEnglish(number) {
     let n = 1000000000000000000000000000000000000000000000000000000000000000n;
 
     while(index > 0) {
+        if(out)
+            out += " ";
         while(index > 0 && n > number) {
             n /= 1000n;
             index--;
@@ -338,10 +383,12 @@ function toEnglish(number) {
 
             number = number % base;
             if(div !== 0n)
-                out += toEnglish(div)+" "+ENGLISH_THOUSANDS[index]+" ";
+                out += toEnglish(div)+" "+ENGLISH_THOUSANDS[index];
+            else
+                out += ENGLISH_THOUSANDS[index];   
         }
     }
-    return out + toEnglish(number);
+    return out + (number !== 0n ? " "+toEnglish(number,ord) : "");
 }
 
 function toRomanNumeral(number, BASES = ROMAN_BASES) {
@@ -381,9 +428,7 @@ const R_DIRECTIVE = (stream, args, colonSign, atSign, formatArgs) => {
                 return princ(toRomanNumeral(formatArgs.shift(), OLD_ROMAN_BASES));
             if(atSign)
                 return princ(toRomanNumeral(formatArgs.shift()));
-            // :
-            // ~R
-            return princ(toEnglish(formatArgs.shift()));
+            return princ(toEnglish(formatArgs.shift(), colonSign));
         }
         let radix = 10;
         let mincol = 0;
