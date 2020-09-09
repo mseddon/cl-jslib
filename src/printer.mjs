@@ -16,7 +16,7 @@ import { arrayHasFillPointer } from "./arrays.mjs";
 import { freshLine } from "./streams.mjs";
 export { PRINT_OBJECT } from "./print-object.mjs";
 
-export function printObject(object, outputStream) {
+export function printObject(object, outputStream = lispInstance.STANDARD_OUTPUT) {
     if(object !== undefined && object !== null && object[PRINT_OBJECT])
         return object[PRINT_OBJECT](object, outputStream);
     return printNotReadableObject(object, outputStream);
@@ -93,7 +93,7 @@ export function pprintDispatch(object, table = lispInstance.PRINT_PPRINT_DISPATC
 
 // write object &key (array *print-array*) (base *print-base*) (circle *print-circle*) (escape *print-escape*) (gensym *print-gensym*) (length *print-length*) (level *print-level*) (lines *print-lines*) (miser-width *print-miser-width*) (*print-pprint-dispatch* pprint-dispatch) (pretty *print-pretty*) (radix *print-radix*) (readably *print-readably*) (right-margin *print-right-margin*) (stream *standard-output*)
 export function write(object) {
-    printObject(object, lispInstance.STANDARD_OUTPUT);
+    printObject(object);
 }
 
 // prin1 &optional output-stream
@@ -103,7 +103,7 @@ export function prin1(object, outputStream = lispInstance.STANDARD_OUTPUT) {
     try {
         lispInstance.PRINT_ESCAPE = true;
         lispInstance.STANDARD_OUTPUT = outputStream;
-        write(object);
+        write(object, outputStream);
     } finally {
         lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
         lispInstance.STANDARD_OUTPUT = oSTANDARD_OUTPUT;
@@ -119,7 +119,7 @@ export function princ(object, outputStream = lispInstance.STANDARD_OUTPUT) {
         lispInstance.PRINT_ESCAPE = false;
         lispInstance.PRINT_READABLY = false;
         lispInstance.STANDARD_OUTPUT = outputStream;
-        write(object);
+        write(object, outputStream);
     } finally {
         lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
         lispInstance.PRINT_READABLY = oPRINT_READABLY;
@@ -169,107 +169,143 @@ export function princToString(object) {
 // print-not-readable-object // defined in print-object
 
 // format
-export const formatDirectives = {
-    'C': (stream, args, colonSign, atSign, formatArgs) => {
-        if(args.length)
-            throw "Too many arguments to ~C directive";
-        if(colonSign && atSign)
-            princ(charName(formatArgs.shift()), stream);
-        else if(atSign)
-            prin1(formatArgs.shift(), stream);
-        else if(colonSign)
-            princ(charName(formatArgs.shift()), stream);
-        else
-            princ(formatArgs.shift(), stream);
-    },
-    '%': (stream, args, colonSign, atSign, formatArgs) => {
-        let n = 1;
-        if(args.length == 1) {
-            if(typeof args[i] !== "number")
-                throw "Number expected";
-            
-        } else if(args.length !== 0)
-            throw "Too many arguments to ~% directive";
-        while(n-- > 0)
-            writeChar('\n', stream);
-    },
-    '&': (stream, args, colonSign, atSign, formatArgs) => {
-        let n = 1;
-        if(args.length == 1) {
-            if(typeof args[i] !== "number")
-                throw "Number expected";
-        } else if(args.length !== 0)
-            throw "Too many arguments to ~% directive";
-        if(n > 0)
-            freshLine(stream);
-        while(n-- > 0)
-            writeChar('\n', stream);
-    },
-    '~': (stream, args, colonSign, atSign, formatArgs) => {
-        let n = 1;
-        if(args.length == 1) {
-            if(typeof args[i] !== "number")
-                throw "Number expected";      
-        } else if(args.length !== 0)
-            throw "Too many arguments to ~% directive";
-        while(n-- > 0)
-            writeChar('~', stream);
-    },
-    '|': (stream, args, colonSign, atSign, formatArgs) => {
-        let n = 1;
-        if(args.length == 1) {
-            if(typeof args[i] !== "number")
-                throw "Number expected";      
-        } else if(args.length !== 0)
-            throw "Too many arguments to ~% directive";
-        while(n-- > 0)
-            writeChar('\v', stream);
-    },
-    'D': (stream, args, colonSign, atSign, formatArgs) => {
-        let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
-        let oPRINT_RADIX = lispInstance.PRINT_RADIX;
-        let oPRINT_BASE = lispInstance.PRINT_BASE;
-        let oPRINT_READABLY = lispInstance.PRINT_READABLY;
+export const formatDirectives = {};
 
-        try {
-            let radix = 10;
-            let mincol = 0;
-            let padchar = ' ';
-            let commachar = '';
-            let commaInterval = 3;
-            if(args.length) {
-                radix = args[0];
-                if(args.length >= 2) mincol = args[1];
-                if(args.length >= 3) padchar = args[2];
-                if(args.length >= 4) commachar = args[3];
-                if(args.length >= 5) commaInterval = args[4];
-            }
-            let arg = formatArgs.shift()
-            let prefix = "";
+function addDirective(char, fn) {
+    formatDirectives[char] = fn;
+}
+addDirective('C', (stream, args, colonSign, atSign, formatArgs) => {
+    if(args.length)
+        throw "Too many arguments to ~C directive";
+    if(colonSign && atSign)
+        princ(charName(formatArgs.shift()), stream);
+    else if(atSign)
+        prin1(formatArgs.shift(), stream);
+    else if(colonSign)
+        princ(charName(formatArgs.shift()), stream);
+    else
+        princ(formatArgs.shift(), stream);
+});
+addDirective('%', (stream, args, colonSign, atSign, formatArgs) => {
+    let n = 1;
+        if(args.length == 1) {
+            if(typeof args[i] !== "number")
+                throw "Number expected";
             
-            if(atSign && arg >= 0)
-                prefix = "+";
-            
-            lispInstance.PRINT_BASE = radix;
-            let number = princToString(arg);
-            if(number[0] == "-") {
-                prefix = "-";
-                number = number.substring(1);
-            }
-            if(typeof arg === "number" && colonSign && commaInterval > 0) {
-                // now add commaaaahs.
-                let s = "";
-                
-            }
-            princ(stream, prefix+number)
-        } finally {
-            lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
-            lispInstance.PRINT_RADIX = oPRINT_RADIX;
-            lispInstance.PRINT_BASE = oPRINT_BASE;
-            lispInstance.PRINT_READABLY = oPRINT_READABLY;
+        } else if(args.length !== 0)
+            throw "Too many arguments to ~% directive";
+        while(n-- > 0)
+            writeChar('\n', stream);
+});
+addDirective('&', (stream, args, colonSign, atSign, formatArgs) => {
+    let n = 1;
+    if(args.length == 1) {
+        if(typeof args[i] !== "number")
+            throw "Number expected";
+    } else if(args.length !== 0)
+        throw "Too many arguments to ~% directive";
+    if(n > 0)
+        freshLine(stream);
+    while(n-- > 0)
+        writeChar('\n', stream);
+});
+
+addDirective('~', (stream, args, colonSign, atSign, formatArgs) => {
+    let n = 1;
+    if(args.length == 1) {
+        if(typeof args[i] !== "number")
+            throw "Number expected";      
+    } else if(args.length !== 0)
+        throw "Too many arguments to ~% directive";
+    while(n-- > 0)
+        writeChar('~', stream);
+});
+addDirective('|', (stream, args, colonSign, atSign, formatArgs) => {
+    let n = 1;
+    if(args.length == 1) {
+        if(typeof args[i] !== "number")
+            throw "Number expected";      
+    } else if(args.length !== 0)
+        throw "Too many arguments to ~% directive";
+    while(n-- > 0)
+        writeChar('\v', stream);
+});
+
+
+const R_DIRECTIVE = (stream, args, colonSign, atSign, formatArgs) => {
+    let oPRINT_ESCAPE = lispInstance.PRINT_ESCAPE;
+    let oPRINT_RADIX = lispInstance.PRINT_RADIX;
+    let oPRINT_BASE = lispInstance.PRINT_BASE;
+    let oPRINT_READABLY = lispInstance.PRINT_READABLY;
+
+    try {
+        let radix = 10;
+        let mincol = 0;
+        let padchar = ' ';
+        let commachar = ',';
+        let commaInterval = 3;
+        if(args.length) {
+            radix = args[0];
+            if(args.length >= 2) mincol = args[1];
+            if(args.length >= 3) padchar = args[2];
+            if(args.length >= 4) commachar = args[3];
+            if(args.length >= 5) commaInterval = args[4];
         }
+        let arg = formatArgs.shift()
+        let prefix = "";
+        
+        if(atSign && arg >= 0)
+            prefix = "+";
+        
+        lispInstance.PRINT_BASE = radix;
+        let number = princToString(arg);
+        if(number[0] == "-") {
+            prefix = "-";
+            number = number.substring(1);
+        }
+        if(typeof arg === "number" && colonSign && commaInterval > 0) {
+            // now interspersed commas.
+            let s = "";
+
+            if(number.length > commaInterval) {
+                for(let i=number.length; i>=commaInterval; i-=commaInterval) {
+                    s = number.substr(i-commaInterval, commaInterval) + s;
+                    if(i-commaInterval >= commaInterval)
+                        s = commachar + s;
+                    else {
+                        if(i-commaInterval)
+                            s = commachar+s;
+                        s = number.substr(0, i-commaInterval) + s;
+                    }
+                }
+                number = s;
+            }
+        }
+        princ(padChar(padchar, prefix+number, mincol), stream);
+    } finally {
+        lispInstance.PRINT_ESCAPE = oPRINT_ESCAPE;
+        lispInstance.PRINT_RADIX = oPRINT_RADIX;
+        lispInstance.PRINT_BASE = oPRINT_BASE;
+        lispInstance.PRINT_READABLY = oPRINT_READABLY;
     }
 }
+addDirective('D', (stream, args, colonSign, atSign, formatArgs) => {
+    args.unshift(10);
+    return R_DIRECTIVE(stream, args, colonSign, atSign, formatArgs);
+});
+addDirective('B', (stream, args, colonSign, atSign, formatArgs) => {
+    args.unshift(2);
+    return R_DIRECTIVE(stream, args, colonSign, atSign, formatArgs);
+});
+addDirective('O', (stream, args, colonSign, atSign, formatArgs) => {
+    args.unshift(7);
+    return R_DIRECTIVE(stream, args, colonSign, atSign, formatArgs);
+});
+addDirective('X', (stream, args, colonSign, atSign, formatArgs) => {
+    args.unshift(16);
+    return R_DIRECTIVE(stream, args, colonSign, atSign, formatArgs);
+});
+addDirective('R', R_DIRECTIVE);
 
 export function format(designator, controlString, ...args) {
     let stream;
@@ -314,8 +350,8 @@ export function format(designator, controlString, ...args) {
                 if(controlString[rp] == ',') {
                     rp++;
                     continue;
-                }
-                break;
+                } else
+                    break;
             }
 
             let atSign = false, colonSign = false;
@@ -324,7 +360,7 @@ export function format(designator, controlString, ...args) {
                 if(controlString[rp] == '@') {
                     rp++;
                     if(atSign)
-                        throw ": already appeared in this directive";
+                        throw "@ already appeared in this directive";
                     atSign = true;
                 } else if(controlString[rp] == ':') {
                     rp++;
@@ -338,7 +374,7 @@ export function format(designator, controlString, ...args) {
             let directive = controlString[rp++].toUpperCase();
             if(!formatDirectives[directive])
                 throw "Invalid format directive ~"+directive;
-            formatDirectives[directive](stream, csArgs, colonSign, atSign)
+            formatDirectives[directive](stream, csArgs, colonSign, atSign, args)
         } else {
             writeChar(ch, stream);
         }
@@ -413,7 +449,7 @@ String.prototype[PRINT_OBJECT] = (object, stream) => {
 }
 
 Number.prototype[PRINT_OBJECT] = (object, stream) => {
-    princ(object+"", stream);
+    princ(object.toString(lispInstance.PRINT_BASE).toUpperCase(), stream);
 }
 
 LispArray.prototype[PRINT_OBJECT] = (object, stream) => {

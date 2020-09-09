@@ -436,7 +436,6 @@ setMacroCharacter('(', (inputStream, char) => {
     }
 }, false, standardReadtable);
 
-
 // )
 setMacroCharacter(')', syntaxErrorMacro, false, standardReadtable);
 

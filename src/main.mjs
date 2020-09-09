@@ -15,6 +15,18 @@ import { PrettyPrintDispatchTable } from "./printer.mjs";
 import { makeStringInputStream } from "./streams.mjs";
 import { format } from "./printer.mjs";
 
+
+let names = [[1000000000000000000000000000000000000000000000000000000000000000n, "vigtillion"],
+             [1000000000000000000000000000000000000000000000000000000000000n,    "novemdecillion"],
+             [1000000000000000000000000000000000000000000000000000000000n,       "octodecillion"],
+             [1000000000000000000000000000000000000000000000000000000n,          "septendecillion"],
+             [1000000000000000000000000000000000000000000000000000n,             "sexdecillion"],
+             [1000000000000000000000000000000000000000000000000n,                "quindecillion"],
+             [1000000000000000000000000000000000000000000000n,                   "quattuordecillion"],
+             [1000000000000000000000000000000000000000000n,                      "tredecillion"]];
+             
+             
+
 function initializeInstance(inst) {
     setInstance(inst);
     inst.packageNames = new Map();
@@ -109,8 +121,7 @@ function makeInstance() {
 
 makeInstance();
 
-lispInstance.PRINT_ARRAY = true;
-printer.princ(reader.read(makeStringInputStream('#2a((1 2) (3 4))')));
-printer.princ("\n");
-printer.princ(lispInstance.PACKAGE)
+
+format(true, "~20,'0,',,4:@X", 12345);
+
 console.log(lispInstance.STANDARD_OUTPUT.outputString);
